@@ -1,2 +1,0 @@
-# agrotec
-Fundación Alberto Motta
