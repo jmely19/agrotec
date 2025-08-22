@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big savings</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="Logo .png" alt="AGROTEC">
+    </div>
+    <nav>
+      <ul> <!-- Esta es el area del encabezado  -->
+        <li><a class="active" href="index.html">HOME</a></li><li><a href="About.us/about.html">ABOUT US</a></li><li><a href="products.html">PRODUCTS</a></li><li><a href="sellers.html">SELLERS</a></li><li><a href="savings.html">SAVINGS</a></li>
+      </ul>
+    </nav>
+    <div class="icons">
+        <a href="#" aria-label="Mi Cuenta"><i class="fa-solid fa-user"></i></a>
+      <a href="#" aria-label="Carrito de Compras"><i class="fa-solid fa-cart-shopping"></i></a>
+    </div>
+  </header>
+
+    <section class="hero">
+        <h2>BIG SAVINGS</h2>
+        <div class="search-box">
+            <input type="text" id="search" placeholder="Search...">
+            <button onclick="searchProduct()">🔍</button>
+        </div>
+    </section>
+
+    <section class="products">
+        <div class="product" data-name="Clamshell tomato cherry">
+            <img src="https://png.pngtree.com/png-vector/20230903/ourmid/pngtree-fruit-fresh-tomato-png-image_9959799.png" alt="Tomato">
+            <p>Clamshell tomato cherry 1LB</p>
+            <span>$0.65</span>
+            <button onclick="addToCart('Clamshell tomato cherry')">Add</button>
+        </div>
+
+        <div class="product" data-name="Purple Cabbage">
+            <img src="https://domf5oio6qrcr.cloudfront.net/medialibrary/5113/h0518g16207257080528.jpg" alt="Purple Cabbage">
+            <p>Purple Cabbage</p>
+            <span>$0.98</span>
+            <button onclick="addToCart('Purple Cabbage')">Add</button>
+        </div>
+
+        <div class="product" data-name="Green Cabbage">
+            <img src="https://www.freshpoint.com/wp-content/uploads/2020/02/Freshpoint-green-cabbage.jpg" alt="Green Cabbage">
+            <p>Green Cabbage 1LB</p>
+            <span>$1.78</span>
+            <button onclick="addToCart('Green Cabbage')">Add</button>
+        </div>
+
+        <div class="product" data-name="Parsley">
+            <img src="https://cdn.mafrservices.com/pim-content/KWT/media/product/737205/1736859603/737205_main.jpg?im=Resize=480" alt="Parsley">
+            <p>Parsley</p>
+            <span>$1.78</span>
+            <button onclick="addToCart('Parsley')">Add</button>
+        </div>
+
+        <div class="product" data-name="Celery 100 GR">
+            <img src="https://static.vecteezy.com/system/resources/previews/033/302/994/non_2x/celery-with-ai-generated-free-png.png" alt="Celery 100 GR">
+            <p>Celery 100 GR</p>
+            <span>$1.50</span>
+            <button onclick="addToCart('Parsley 100 GR')">Add</button>
+        </div>
+
+        <div class="product" data-name="National Carrot">
+            <img src="https://png.pngtree.com/png-clipart/20250122/original/pngtree-fresh-organic-carrots-in-a-neat-stack-png-image_20009282.png" alt="National Carrot">
+            <p>National Carrot</p>
+            <span>$1.50</span>
+            <button onclick="addToCart('National Carrot')">Add</button>
+        </div>
+
+        <div class="product" data-name="Onion small">
+            <img src="https://png.pngtree.com/png-clipart/20250729/original/pngtree-fresh-red-onions-whole-and-sliced-isolated-png-image_21222684.png" alt="Onion">
+            <p>Onion</p>
+            <span>$0.48</span>
+            <button onclick="addToCart('Onion small')">Add</button>
+        </div>
+
+        <div class="product" data-name="National onion large">
+            <img src="https://semillasysemillas.com/wp-content/uploads/2017/07/CEBOLLA-Tokio-Long-W.png" alt="National onion">
+            <p>National onion</p>
+            <span>$0.56</span>
+            <button onclick="addToCart('National onion large')">Add</button>
+        </div>
+    </section>
+  <footer>
+    <div class="footer-content-simplified">
+      <div class="footer-left">
+        <div class="footer-logo-agrotec">
+          <img src="Logo .png" alt="AGROTEC Logo Footer">
+          <h3>AGROTEC</h3>
+        </div>
+        <p class="footer-slogan-main">Harvesting quality for all</p>
+      </div>
+
+      <div class="footer-right">
+        <h3 class="footer-follow-us">follow us</h3>
+        <div class="social-icons-footer">
+          <a href="https://www.facebook.com/tupagina" target="_blank" aria-label="Facebook de AGROTEC"><i class="fab fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/tu_usuario" target="_blank" aria-label="Instagram de AGROTEC"><i class="fab fa-instagram"></i></a>
+          <a href="https://www.twitter.com/tu_usuario" target="_blank" aria-label="Twitter de AGROTEC"><i class="fab fa-twitter"></i></a>
+          <a href="https://www.linkedin.com/company/tuempresa" target="_blank" aria-label="LinkedIn de AGROTEC"><i class="fab fa-linkedin-in"></i></a>
+          </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom-simplified">
+      © 2025 AGROTEC | All rights reserved.
+    </div>
+  </footer>
+    
+    <script>
+        function searchProduct() {
+            let input = document.getElementById('search').value.toLowerCase();
+            let products = document.querySelectorAll('.product');
+            products.forEach(product => {
+                let name = product.getAttribute('data-name').toLowerCase();
+                product.style.display = name.includes(input) ? 'block' : 'none';
+            });
+        }
+
+        function addToCart(product) {
+            alert(product + " added to cart!");
+        }
+    </script>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
