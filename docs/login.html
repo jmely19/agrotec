@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect to my account</title>
+
+  <!-- Estilos Unificados -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header" role="banner">
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+      <div class="navbar__container">
+        <div class="navbar__brand">
+          <a href="home.html" class="navbar__logo" aria-label="AGROTEC Home">
+            <img src="img/logo.png" alt="AGROTEC Logo" class="navbar__logo-img">
+          </a>
+        </div>
+
+        <ul class="navbar__menu" role="menubar">
+          <li><a href="home.html" class="navbar__link">HOME</a></li>
+          <li><a href="plans.html" class="navbar__link">PLANS</a></li>
+          <li><a href="farmers.html" class="navbar__link">FARMERS</a></li>
+          <li><a href="sellers.html" class="navbar__link">SELLERS</a></li>
+          <li><a href="products.html" class="navbar__link">PRODUCTS</a></li>
+          <li><a href="savings.html" class="navbar__link">SAVINGS</a></li>
+        </ul>
+
+        <div class="navbar__actions">
+          <a href="login.html" class="navbar__action"><i class="fas fa-user"></i></a>
+          <span class="navbar__divider">|</span>
+          <a href="#" class="navbar__action"><i class="fas fa-shopping-cart"></i></a>
+        </div>
+
+        <button class="navbar__toggle" aria-label="Toggle menu">
+          <span class="navbar__toggle-line"></span>
+          <span class="navbar__toggle-line"></span>
+          <span class="navbar__toggle-line"></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Contenido Principal -->
+  <main class="main-content">
+    <div class="container">
+      <div class="login-section">
+        <div class="login-form">
+          <h1>Connect to my account</h1>
+          <p class="subtitle">Enter your email and password:</p>
+
+          <form id="loginForm">
+            <div class="input-group">
+              <i class="fas fa-envelope input-icon"></i>
+              <input type="email" id="email" placeholder="E-mail" required>
+            </div>
+            <div class="input-group">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="get-in-btn">GET IN</button>
+          </form>
+
+          <div class="links-section">
+            <p>New client ? <a href="register.html" class="create-account">Create Account</a></p>
+            <p>Forgotten password ? <a href="#" class="recover-password">Recover password</a></p>
+          </div>
+
+          <div class="divider"><hr><span>or</span><hr></div>
+
+          <div class="social-buttons">
+            <button class="google-btn"><i class="fab fa-google"></i> Continue with Google</button>
+            <button class="facebook-btn"><i class="fab fa-facebook-f"></i> Continue with Facebook</button>
+          </div>
+        </div>
+      </div>
+      <div class="image-section"><div class="image-overlay"></div></div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <img src="img/logo.png" alt="AGROTEC Logo" class="footer__logo">
+        <p class="footer__tagline">Harvesting quality for all</p>
+        <div class="footer__copyright">
+          <p>© AGROTEC</p>
+          <p>AGROTEC is a registered trademark of AGROTEC PANAMA S.A.</p>
+        </div>
+      </div>
+      <div class="footer__columns">
+        <div class="footer__column">
+          <h3>US</h3>
+          <ul><li><a href="#">About us</a></li></ul>
+        </div>
+        <div class="footer__column">
+          <h3>LOG IN</h3>
+          <ul>
+            <li><a href="register.html">Create an account</a></li>
+            <li><a href="login.html">Log in</a></li>
+          </ul>
+        </div>
+        <div class="footer__column">
+          <h3>INFORMATION</h3>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms and Conditions</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <div class="footer__social">
+        <h3>FOLLOW US</h3>
+        <div class="footer__social-links">
+          <a href="#"><img src="img/home/Facebook.png" alt="Facebook"></a>
+          <a href="#"><img src="https://static.cdnlogo.com/logos/t/46/tiktok-icon-black.svg" alt="TikTok"></a>
+          <a href="#"><img src="img/home/Instagram_icon.png" alt="Instagram"></a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/login.js"></script>
+
+</body>
+</html>
