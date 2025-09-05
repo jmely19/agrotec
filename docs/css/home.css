@@ -1,16 +1,3 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    background-color: #f5f5f5;
-}
-
 /*
  * AGROTEC Website - Main Stylesheet
  * Author: Senior Front-End Developer
@@ -325,289 +312,387 @@ p {
     transition: all var(--transition-base);
 }
 
-/* Hero Section */
+/* ========================================
+   Hero Section Styles
+======================================== */
+
 .hero {
-    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
-                url("../img/sellers/portada.jpeg");
-    height: 45vh;
+    position: relative;
+    min-height: 100vh;
     display: flex;
     align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: white;
-    position: relative;
-}
-
-.hero-content {
-    max-width: 800px;
-    width: 100%;
-    padding: 0 20px;
-}
-
-.hero-title {
-    font-size: 4rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    margin-bottom: 2rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.search-container {
-    display: flex;
-    max-width: 500px;
-    margin: 0 auto;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
     overflow: hidden;
 }
 
-.search-input {
-    flex: 1;
-    padding: 15px 20px;
-    border: none;
-    font-size: 16px;
-    outline: none;
-    background: white;
+.hero__background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
+}
+
+.hero__bg-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.hero__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        135deg,
+        var(--color-bg-overlay) 0%,
+        rgba(44, 62, 45, 0.4) 50%,
+        rgba(44, 62, 45, 0.7) 100%
+    );
+    z-index: -1;
+}
+
+.hero__content {
+    position: relative;
+    z-index: 1;
+    padding: var(--spacing-4xl) 0;
+}
+
+.hero__text {
+    max-width: 600px;
+}
+
+.hero__title {
+    margin-bottom: var(--spacing-xl);
+}
+
+.hero__brand {
+    display: block;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-light);
+    line-height: 0.9;
+    margin-bottom: var(--spacing-sm);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero__tagline {
+    display: block;
+    font-size: clamp(1.25rem, 3vw, 2rem);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-light);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.hero__cta {
+    margin-top: var(--spacing-2xl);
+}
+
+/* Text Section - Updated with image options */
+.text-section {
+    background: #2d5a3d;
+    color: white;
+    padding: 60px 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(45, 90, 61, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Opción 1: Imagen de fondo */
+.text-background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../../images/agrotec-background.jpg');
+    background-size: cover;
+    background-position/* Reset and Base Styles */
+    
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
     color: #333;
 }
 
-.search-input::placeholder {
-    color: #999;
-    font-style: italic;
-}
-
-.search-btn {
-    padding: 15px 25px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    min-width: 80px;
-}
-
-.search-btn:hover {
-    background-color: #45a049;
-}
-
-/* Container */
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
 }
 
-/* Filter Section */
-.filter-section {
-    background: white;
-    padding: 20px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.filter-section .container {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.filter-label {
-    font-weight: 600;
-    color: #333;
-    font-size: 16px;
-}
-
-.view-options {
-    display: flex;
-    gap: 10px;
-}
-
-.view-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 15px;
-    border: 2px solid #ddd;
-    background: white;
-    color: #666;
-    cursor: pointer;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-.view-btn:hover {
-    border-color: #4CAF50;
-    color: #4CAF50;
-}
-
-.view-btn.active {
-    background-color: #4CAF50;
-    border-color: #4CAF50;
+/* We Are AGROTEC Section */
+.we-are-section {
+background: var(--color-primary);
+padding: var(--spacing-md);
     color: white;
 }
 
-.grid-icon {
-    font-size: 16px;
-}
-
-.list-icon {
-    font-size: 16px;
-}
-
-/* Sellers Section */
-.sellers-section {
-    padding: 40px 0;
-    background-color: #f5f5f5;
-}
-
-.sellers-grid {
+.we-are-wrapper {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
-    margin-top: 20px;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items: center;
 }
 
-.seller-card {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.seller-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.seller-image {
-    width: 100%;
-    height: 220px;
-    overflow: hidden;
-    position: relative;
-}
-
-.seller-image img {
-    width: 100%;
-    height: 100%;
+.we-are-image img {
+    width: 60%;
+    height: 400px;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
-.seller-card:hover .seller-image img {
-    transform: scale(1.05);
+.we-are-text h1 {
+    font-size: 48px;
+    font-weight: bold;
+    margin-bottom: 25px;
+    letter-spacing: 2px;
 }
 
-.seller-info {
-    padding: 20px;
-    text-align: center;
+.we-are-text p {
+    font-size: 18px;
+    line-height: 1.8;
+    margin-bottom: 35px;
+    opacity: 0.9;
 }
 
-.seller-name {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #333;
-    margin: 0;
+/* Responsive */
+@media (max-width: 768px) {
+    .we-are-wrapper {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .we-are-text h1 {
+        font-size: 32px;
+    }
+
+    .we-are-image img {
+        height: 250px;
+    }
 }
 
-/* List View */
-.sellers-grid.list-view {
+/* Text Section */
+.text-section {
+    background: #1e5c34;
+    color: white;
+    padding: 80px 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(45, 90, 61, 0.3);
+}
+
+.text-section h1 {
+    font-size: 48px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+}
+
+.text-section p {
+    font-size: 18px;
+    line-height: 1.8;
+    margin-bottom: 40px;
+    opacity: 0.9;
+}
+
+.read-more-btn {
+    background: #8fbc8f;
+    color: #2d5a3d;
+    border: none;
+    padding: 15px 35px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.read-more-btn:hover {
+    background: #307030;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Vision and Mission Section */
+.vision-mission-section {
+    background: #2b632b;
+    min-height: 100vh;
+    padding: 60px 0;
+}
+
+.vision-mission-section .content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    height: 100%;
+}
+
+.left-column, .right-column {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 30px;
 }
 
-.list-view .seller-card {
+/* Person Section */
+.person-section {
+    flex: 1;
     display: flex;
-    flex-direction: row;
     align-items: center;
-    padding: 15px;
+    justify-content: center;
 }
 
-.list-view .seller-image {
+.person-image {
+    width: 100%;
+    height: 400px;
+    background: linear-gradient(135deg, #8fbc8f 0%, #7db87d 100%);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.person-image::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 180px;
+    height: 320px;
+    background: linear-gradient(145deg, #8B4513 0%, #654321 100%);
+    border-radius: 50% 50% 0 0;
+}
+
+.person-image::after {
+    content: '';
+    position: absolute;
+    bottom: 250px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 80px;
     height: 80px;
+    background: #D2691E;
     border-radius: 50%;
-    margin-right: 20px;
-    flex-shrink: 0;
+    border: 3px solid #8B4513;
 }
 
-.list-view .seller-info {
-    padding: 0;
-    text-align: left;
+/* Mission Card */
+.mission-card {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.list-view .seller-name {
-    font-size: 1.1rem;
+.mission-card h2 {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2d5a3d;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
 }
 
-.list-view .seller-card:hover {
-    transform: none;
-    background-color: #f9f9f9;
+.mission-card p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.mission-card .read-more-btn {
+    align-self: flex-start;
+}
+
+/* Vision Card */
+.vision-card {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.vision-card h2 {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2d5a3d;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+}
+
+.vision-card p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.vision-card .read-more-btn {
+    align-self: flex-start;
+}
+
+/* Vegetables Hands Section - Updated for image */
+.vegetables-hands {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hands-image {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.hands-image:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .hero-title {
-        font-size: 2.5rem;
-        letter-spacing: 0.1em;
-    }
-    
-    .search-container {
-        flex-direction: column;
-        border-radius: 8px;
-    }
-    
-    .search-input,
-    .search-btn {
-        border-radius: 0;
-    }
-    
-    .search-input {
-        border-radius: 8px 8px 0 0;
-    }
-    
-    .search-btn {
-        border-radius: 0 0 8px 8px;
-    }
-    
-    .sellers-grid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-    }
-    
-    .filter-section .container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .list-view .seller-card {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .list-view .seller-image {
-        margin-right: 0;
-        margin-bottom: 15px;
-    }
-}
-
-@media (max-width: 480px) {
-    .hero-title {
-        font-size: 2rem;
-    }
-    
-    .sellers-grid {
+    .agrotec-section .content-wrapper,
+    .vision-mission-section .content-wrapper {
         grid-template-columns: 1fr;
+        gap: 40px;
     }
     
-    .container {
-        padding: 0 15px;
+    .text-section h1 {
+        font-size: 36px;
+    }
+    
+    .vision-card h2,
+    .mission-card h2 {
+        font-size: 28px;
+    }
+    
+    .agrotec-main-image {
+        max-width: 100%;
+        height: 300px;
     }
 }
 
@@ -921,5 +1006,68 @@ p {
 @media (min-width: 1280px) {
     :root {
         --container-padding: var(--spacing-2xl);
+    }
+}
+
+/* ========================================
+   Mobile Menu Styles (for future JS implementation)
+======================================== */
+
+.navbar__menu--mobile {
+    position: fixed;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--color-primary);
+    flex-direction: column;
+    padding: var(--spacing-xl);
+    gap: var(--spacing-lg);
+    transform: translateY(-100%);
+    transition: transform var(--transition-base);
+    box-shadow: var(--shadow-lg);
+}
+
+.navbar__menu--mobile.navbar__menu--open {
+    transform: translateY(0);
+}
+
+/* ========================================
+   Animation Classes
+======================================== */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* ========================================
+   Print Styles
+======================================== */
+
+@media print {
+    .navbar,
+    .hero__cta,
+    .footer__social {
+        display: none;
+    }
+    
+    .hero {
+        min-height: auto;
+        padding: var(--spacing-xl) 0;
+    }
+    
+    body {
+        font-size: 12pt;
+        line-height: 1.4;
     }
 }
