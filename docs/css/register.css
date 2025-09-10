@@ -1,0 +1,342 @@
+/* ========================================
+   Reset & Base
+======================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #2C3E2D;
+  background-color: #fff;
+  overflow-x: hidden;
+}
+
+/* Links & Images */
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+}
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+ul {
+  list-style: none;
+}
+
+/* ========================================
+   Header
+======================================== */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: #2b632b;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.navbar {
+  padding: 1rem 0;
+}
+
+.navbar .container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar__logo-img {
+  height: 60px;
+  width: auto;
+}
+
+.navbar__menu {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.navbar__link {
+  color: #fff;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.5rem 0;
+}
+.navbar__link:hover { color: #D4A574; }
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #fff;
+}
+.navbar__divider { color: #fff; opacity: 0.7; }
+
+.navbar__toggle {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+}
+.navbar__toggle-line {
+  width: 24px;
+  height: 2px;
+  background: #fff;
+}
+
+/* ========================================
+   Main Content (Register Form)
+======================================== */
+.main-content {
+  margin-top: 100px; /* espacio debajo del header fijo */
+}
+
+.register-container {
+  display: flex;
+  min-height: calc(100vh - 100px);
+  width: 100%;
+}
+
+.register-section {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-width: 400px;
+}
+
+.register-form {
+  width: 100%;
+  max-width: 400px;
+}
+
+.register-form h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Toggle buttons */
+.user-type-toggle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+.toggle-btn {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #2b632b;
+  border-radius: 25px;
+  background: transparent;
+  color: #2b632b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.toggle-btn.active {
+  background: #2b632b;
+  color: #fff;
+}
+
+/* Form fields */
+.form-container { display: none; }
+.form-container.active { display: block; }
+
+.input-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.half-width { flex: 1; }
+
+.input-group {
+  margin-bottom: 1rem;
+}
+.input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e1e8ed;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+.input-group input:focus {
+  border-color: #2b632b;
+  box-shadow: 0 0 0 3px rgba(92, 184, 92, 0.1);
+}
+
+/* Create account button */
+.create-account-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #2b632b, #2b632b);
+  color: #fff;
+  border: none;
+  padding: 15px;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 1rem 0;
+}
+.create-account-btn:hover {
+  background: linear-gradient(135deg, #2b632b, #2b632b);
+}
+
+/* Login link */
+.login-link {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+.login-link a { color: #3498db; }
+.login-link a:hover { text-decoration: underline; }
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 2rem 0;
+  color: #999;
+}
+.divider hr {
+  flex: 1;
+  border: none;
+  height: 1px;
+  background: #e1e8ed;
+}
+.divider span { padding: 0 1rem; }
+
+/* Social buttons */
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.google-btn,
+.facebook-btn {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.google-btn { background: #dc4e41; color: #fff; }
+.google-btn:hover { background: #c23321; }
+.facebook-btn { background: #4267b2; color: #fff; }
+.facebook-btn:hover { background: #365899; }
+
+/* Imagen lateral */
+.image-section {
+  flex: 1;
+  background: linear-gradient(135deg, #2b632b, #2b632b);
+  position: relative;
+  min-height: 100vh;
+}
+.image-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.1);
+}
+
+/* ========================================
+   Footer
+======================================== */
+.footer {
+  background: #F8F9FA;
+  padding: 3rem 1rem 2rem;
+}
+.footer__top {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+.footer__brand img {
+  height: 60px;
+  margin-bottom: 1rem;
+}
+.footer__tagline {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #6B8E5A;
+  margin-bottom: 1rem;
+}
+.footer__copyright {
+  font-size: 0.875rem;
+  color: #888;
+}
+.footer__columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+.footer__column-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6B8E5A;
+  margin-bottom: 0.5rem;
+}
+.footer__link {
+  font-size: 0.9rem;
+  color: #888;
+  transition: 0.3s;
+}
+.footer__link:hover { color: #6B8E5A; }
+
+.footer__bottom {
+  border-top: 1px solid #E5E5E5;
+  padding-top: 1rem;
+}
+.footer__social {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.footer__social-links {
+  display: flex;
+  gap: 1rem;
+}
+.footer__social-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+}
+
+/* ========================================
+   Responsive
+======================================== */
+@media (max-width: 768px) {
+  .register-container { flex-direction: column; }
+  .register-section { min-width: auto; }
+  .footer__top { grid-template-columns: 1fr; }
+  .footer__columns { grid-template-columns: 1fr; }
+  .navbar__menu, .navbar__actions { display: none; }
+  .navbar__toggle { display: flex; }
+}

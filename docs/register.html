@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create my account - AGROTEC</title>
+  <link rel="stylesheet" href="css/register.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header" role="banner">
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+      <div class="container">
+        <!-- Logo -->
+        <div class="navbar__brand">
+          <a href="home.html" class="navbar__logo" aria-label="AGROTEC Home">
+            <img src="img/logo.png" alt="AGROTEC Logo" class="navbar__logo-img">
+          </a>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <ul class="navbar__menu" role="menubar">
+          <li class="navbar__item"><a href="index.html" class="navbar__link">HOME</a></li>
+          <li class="navbar__item"><a href="plans.html" class="navbar__link">PLANS</a></li>
+          <li class="navbar__item"><a href="farmers.html" class="navbar__link">FARMERS</a></li>
+          <li class="navbar__item"><a href="sellers.html" class="navbar__link">SELLERS</a></li>
+          <li class="navbar__item"><a href="products.html" class="navbar__link">PRODUCTS</a></li>
+          <li class="navbar__item"><a href="savings.html" class="navbar__link">SAVINGS</a></li>
+        </ul>
+        
+        <!-- User Actions -->
+        <div class="navbar__actions">
+          <a href="login.html" class="navbar__action" aria-label="User account">
+            <i class="fa fa-user"></i>
+          </a>
+          <span class="navbar__divider">|</span>
+          <a href="#" class="navbar__action" aria-label="Shopping cart">
+            <i class="fa fa-shopping-cart"></i>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="navbar__toggle" aria-label="Toggle mobile menu" aria-expanded="false">
+          <span class="navbar__toggle-line"></span>
+          <span class="navbar__toggle-line"></span>
+          <span class="navbar__toggle-line"></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container register-container">
+      <div class="register-section">
+        <div class="register-form">
+          <h1>Create my account</h1>
+
+          <!-- Toggle buttons -->
+          <div class="user-type-toggle">
+            <button type="button" id="customerBtn" class="toggle-btn active">CUSTOMER</button>
+            <button type="button" id="farmerBtn" class="toggle-btn">FARMER</button>
+          </div>
+
+          <!-- Customer Form -->
+          <form id="customerForm" class="form-container active">
+            <div class="input-row">
+              <div class="input-group half-width">
+                <input type="text" id="customerName" placeholder="Name" required>
+              </div>
+              <div class="input-group half-width">
+                <input type="text" id="customerLastName" placeholder="Last name" required>
+              </div>
+            </div>
+
+            <div class="input-group"><input type="email" id="customerEmail" placeholder="E-mail" required></div>
+            <div class="input-group"><input type="password" id="customerPassword" placeholder="Password" required></div>
+            <div class="input-group"><input type="password" id="customerConfirmPassword" placeholder="Confirm Password" required></div>
+            <div class="input-group"><input type="tel" id="customerPhone" placeholder="Phone Number" required></div>
+
+            <button type="submit" class="create-account-btn">Create a personal account</button>
+          </form>
+
+          <!-- Farmer Form -->
+          <form id="farmerForm" class="form-container">
+            <div class="input-row">
+              <div class="input-group half-width">
+                <input type="text" id="farmerName" placeholder="Name" required>
+              </div>
+              <div class="input-group half-width">
+                <input type="text" id="farmerLastName" placeholder="Last name" required>
+              </div>
+            </div>
+
+            <div class="input-group"><input type="email" id="farmerEmail" placeholder="Business E-mail" required></div>
+            <div class="input-group"><input type="password" id="farmerPassword" placeholder="Password" required></div>
+            <div class="input-group"><input type="text" id="farmerLocation" placeholder="Locate" required></div>
+            <div class="input-group"><input type="tel" id="farmerPhone" placeholder="Phone number" required></div>
+            <div class="input-group"><input type="text" id="farmerBusinessName" placeholder="Business name" required></div>
+
+            <button type="submit" class="create-account-btn farmer-btn">Create a farmer account</button>
+          </form>
+
+          <div class="login-link">
+            <p>Do you already have an account? <a href="login.html" id="enterHereLink">Enter here</a></p>
+          </div>
+
+          <div class="divider"><hr><span>or</span><hr></div>
+
+          <div class="social-buttons">
+            <button class="google-btn"><i class="fab fa-google"></i> Continue with Google</button>
+            <button class="facebook-btn"><i class="fab fa-facebook-f"></i> Continue with Facebook</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="image-section"><div class="image-overlay"></div></div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <img src="img/logo.png" alt="AGROTEC Logo" class="footer__logo">
+          <p class="footer__tagline">Harvesting quality for all</p>
+          <div class="footer__copyright">
+            <p>© AGROTEC</p>
+            <p>AGROTEC is a registered trademark of AGROTEC PANAMA S.A.</p>
+          </div>
+        </div>
+
+        <div class="footer__columns">
+          <div class="footer__column">
+            <h3 class="footer__column-title">US</h3>
+            <ul class="footer__links">
+              <li><a href="#" class="footer__link">About us</a></li>
+            </ul>
+          </div>
+          <div class="footer__column">
+            <h3 class="footer__column-title">LOG IN</h3>
+            <ul class="footer__links">
+              <li><a href="register.html" class="footer__link">Create an account</a></li>
+              <li><a href="login.html" class="footer__link">Log in</a></li>
+            </ul>
+          </div>
+          <div class="footer__column">
+            <h3 class="footer__column-title">INFORMATION</h3>
+            <ul class="footer__links">
+              <li><a href="#" class="footer__link">Privacy Policy</a></li>
+              <li><a href="#" class="footer__link">Terms and Conditions</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <div class="footer__social">
+          <h3 class="footer__social-title">FOLLOW US</h3>
+          <div class="footer__social-links">
+            <a href="#" class="footer__social-link"><img src="img/home/Facebook.png" alt="Facebook" class="footer__social-icon"></a>
+            <a href="#" class="footer__social-link"><img src="https://static.cdnlogo.com/logos/t/46/tiktok-icon-black.svg" alt="TikTok" class="footer__social-icon"></a>
+            <a href="#" class="footer__social-link"><img src="img/home/Instagram_icon.png" alt="Instagram" class="footer__social-icon"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/register.js"></script>
+</body>
+</html>
