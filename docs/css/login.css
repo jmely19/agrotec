@@ -364,7 +364,7 @@ ul {
 /* Imagen lateral */
 .image-section {
   flex: 1;
-  background: url('/docs/img/login-imagenes/fondodeagricultor.avif') center/cover;
+  background: url('img/login-imagenes/fondodeagricultor.avif') center/cover;
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -1080,3 +1080,4 @@ ul {
     line-height: 1.4;
   }
 }
+
