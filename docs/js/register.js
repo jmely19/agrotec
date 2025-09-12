@@ -1,639 +1,497 @@
-// Esperar a que el DOM esté completamente cargado
-document.addEventListener('DOMContentLoaded', function() {
-    // Referencias a elementos del DOM
-    const customerBtn = document.getElementById('customerBtn');
-    const farmerBtn = document.getElementById('farmerBtn');
-    const customerForm = document.getElementById('customerForm');
-    const farmerForm = document.getElementById('farmerForm');
-    const enterHereLink = document.getElementById('enterHereLink');
+// =================== CONFIGURACIÓN ===================
+let currentUserType = 'farmer';
+
+// =================== FUNCIONES DE INTERFAZ ===================
+function setUserType(type) {
+    console.log(`Cambiando tipo de usuario a: ${type}`);
+    currentUserType = type;
     
-    // Estado actual del formulario
-    let currentFormType = 'customer';
+    const userTypeInput = document.getElementById('userType');
+    if (userTypeInput) {
+        userTypeInput.value = type;
+    }
+
+    const customerBtn = document.querySelector('.user-type-btn:first-child');
+    const farmerBtn = document.querySelector('.user-type-btn:last-child');
+    const imageSection = document.getElementById('imageSection');
+    const farmerBg = document.getElementById('farmerBg');
+    const customerBg = document.getElementById('customerBg');
+
+    if (type === 'customer') {
+        if (customerBtn) customerBtn.classList.add('active');
+        if (farmerBtn) farmerBtn.classList.remove('active');
+        
+        const customerFields = document.getElementById('customerFields');
+        const farmerFields = document.getElementById('farmerFields');
+        const registerBtn = document.getElementById('registerBtn');
+        const emailInput = document.getElementById('email');
+        
+        if (customerFields) customerFields.classList.remove('hidden');
+        if (farmerFields) farmerFields.classList.add('hidden');
+        if (registerBtn) registerBtn.textContent = 'Crear cuenta personal';
+        if (emailInput) emailInput.placeholder = 'E-mail personal';
+        
+        // Cambiar imágenes
+        if (imageSection) {
+            imageSection.classList.add('transitioning');
+            imageSection.classList.add('customer-mode');
+            
+            // Cambiar visibilidad de imágenes
+            if (farmerBg) farmerBg.classList.add('hidden');
+            if (customerBg) customerBg.classList.remove('hidden');
+            
+            // Remover la clase de transición después de la animación
+            setTimeout(() => {
+                imageSection.classList.remove('transitioning');
+            }, 800);
+        }
+        
+    } else if (type === 'farmer') {
+        if (customerBtn) customerBtn.classList.remove('active');
+        if (farmerBtn) farmerBtn.classList.add('active');
+        
+        const customerFields = document.getElementById('customerFields');
+        const farmerFields = document.getElementById('farmerFields');
+        const registerBtn = document.getElementById('registerBtn');
+        const emailInput = document.getElementById('email');
+        
+        if (customerFields) customerFields.classList.add('hidden');
+        if (farmerFields) farmerFields.classList.remove('hidden');
+        if (registerBtn) registerBtn.textContent = 'Crear cuenta de farmer';
+        if (emailInput) emailInput.placeholder = 'E-mail del negocio';
+        
+        // Cambiar imágenes
+        if (imageSection) {
+            imageSection.classList.add('transitioning');
+            imageSection.classList.remove('customer-mode');
+            
+            // Cambiar visibilidad de imágenes
+            if (customerBg) customerBg.classList.add('hidden');
+            if (farmerBg) farmerBg.classList.remove('hidden');
+            
+            // Remover la clase de transición después de la animación
+            setTimeout(() => {
+                imageSection.classList.remove('transitioning');
+            }, 800);
+        }
+    }
     
-    // Event listeners para los botones de toggle
-    customerBtn.addEventListener('click', () => switchForm('customer'));
-    farmerBtn.addEventListener('click', () => switchForm('farmer'));
+    console.log(`Interfaz actualizada para tipo: ${type}`);
+}
+
+// =================== CONFIGURAR EVENT LISTENERS PARA BOTONES ===================
+function setupUserTypeButtons() {
+    const customerBtn = document.querySelector('.user-type-btn:first-child');
+    const farmerBtn = document.querySelector('.user-type-btn:last-child');
     
-    // Event listeners para los formularios
-    customerForm.addEventListener('submit', handleCustomerRegistration);
-    farmerForm.addEventListener('submit', handleFarmerRegistration);
+    if (customerBtn) {
+        customerBtn.addEventListener('click', () => setUserType('customer'));
+    }
     
-    // Event listener para el enlace "Enter here"
-    enterHereLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        redirectToLogin();
+    if (farmerBtn) {
+        farmerBtn.addEventListener('click', () => setUserType('farmer'));
+    }
+    
+    console.log('✅ Event listeners para botones de tipo de usuario configurados');
+}
+
+// =================== FUNCIÓN PARA MOSTRAR/OCULTAR CONTRASEÑA ===================
+function setupPasswordToggle() {
+    // Buscar todos los campos de contraseña
+    const passwordFields = document.querySelectorAll('input[type="password"]');
+    
+    // IDs de campos que NO quieres que tengan el ícono del ojo
+    const excludedFields = ['password', 'confirmPassword']; // Agrega o quita IDs según necesites
+    
+    passwordFields.forEach(passwordField => {
+        // Saltar si el campo está en la lista de excluidos
+        if (excludedFields.includes(passwordField.id)) {
+            console.log(`Saltando ícono para campo: ${passwordField.id}`);
+            return;
+        }
+        
+        // Crear el contenedor para el icono
+        const fieldContainer = passwordField.parentElement;
+        fieldContainer.style.position = 'relative';
+        
+        // Crear el icono de mostrar/ocultar
+        const toggleIcon = document.createElement('span');
+        toggleIcon.innerHTML = '<i class="fas fa-eye"></i>';
+        toggleIcon.className = 'password-toggle-icon';
+        toggleIcon.style.cssText = `
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #a0aec0;
+            font-size: 18px;
+            z-index: 10;
+            user-select: none;
+            transition: color 0.3s ease;
+        `;
+        
+        // Agregar hover effect
+        toggleIcon.addEventListener('mouseenter', () => {
+            toggleIcon.style.color = '#4CAF50';
+        });
+        
+        toggleIcon.addEventListener('mouseleave', () => {
+            toggleIcon.style.color = '#a0aec0';
+        });
+        
+        // Función para alternar visibilidad
+        toggleIcon.addEventListener('click', () => {
+            const isPassword = passwordField.type === 'password';
+            
+            if (isPassword) {
+                passwordField.type = 'text';
+                toggleIcon.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                toggleIcon.title = 'Ocultar contraseña';
+            } else {
+                passwordField.type = 'password';
+                toggleIcon.innerHTML = '<i class="fas fa-eye"></i>';
+                toggleIcon.title = 'Mostrar contraseña';
+            }
+        });
+        
+        // Agregar el icono al contenedor
+        fieldContainer.appendChild(toggleIcon);
+        
+        // Ajustar padding del input para que no se superponga con el icono
+        passwordField.style.paddingRight = '60px';
     });
     
-    // Validación en tiempo real para todos los inputs
-    setupRealTimeValidation();
-    
-    // Efectos visuales para inputs
-    setupInputEffects();
-});
+    console.log('✅ Iconos de mostrar/ocultar contraseña configurados');
+}
 
-// Función para cambiar entre formularios Customer y Farmer
-function switchForm(formType) {
-    const customerBtn = document.getElementById('customerBtn');
-    const farmerBtn = document.getElementById('farmerBtn');
-    const customerForm = document.getElementById('customerForm');
-    const farmerForm = document.getElementById('farmerForm');
+// =================== PRECARGAR Y CONFIGURAR IMÁGENES ===================
+function setupImagePreloading() {
+    const farmerBg = document.getElementById('farmerBg');
+    const customerBg = document.getElementById('customerBg');
     
-    // Actualizar estado actual
-    currentFormType = formType;
-    
-    if (formType === 'customer') {
-        // Activar Customer
-        customerBtn.classList.add('active');
-        farmerBtn.classList.remove('active');
-        customerForm.classList.add('active');
-        farmerForm.classList.remove('active');
+    if (farmerBg && customerBg) {
+        // Precargar ambas imágenes para transiciones suaves
+        const farmerImg = new Image();
+        const customerImg = new Image();
+        
+        farmerImg.onload = () => console.log('✅ Imagen farmer precargada');
+        customerImg.onload = () => console.log('✅ Imagen customer precargada');
+        
+        farmerImg.onerror = () => console.error('❌ Error cargando imagen farmer');
+        customerImg.onerror = () => console.error('❌ Error cargando imagen customer');
+        
+        farmerImg.src = farmerBg.src;
+        customerImg.src = customerBg.src;
+        
+        // Configurar estado inicial
+        farmerBg.classList.remove('hidden');
+        customerBg.classList.add('hidden');
+        
+        console.log('✅ Sistema de imágenes configurado');
     } else {
-        // Activar Farmer
-        farmerBtn.classList.add('active');
-        customerBtn.classList.remove('active');
-        farmerForm.classList.add('active');
-        customerForm.classList.remove('active');
+        console.warn('⚠️ No se encontraron las imágenes de fondo');
     }
-    
-    // Limpiar formularios al cambiar
-    clearFormData();
 }
 
-// Función para limpiar datos de formularios
-function clearFormData() {
-    const allInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="tel"]');
-    allInputs.forEach(input => {
-        input.value = '';
-        input.classList.remove('valid', 'invalid');
-    });
+function clearMessages() {
+    const registerMessage = document.getElementById('registerMessage');
+    const successMessage = document.getElementById('successMessage');
+    
+    if (registerMessage) registerMessage.innerHTML = '';
+    if (successMessage) {
+        successMessage.innerHTML = '';
+        successMessage.style.display = 'none';
+    }
 }
 
-// Manejar registro de Customer
-function handleCustomerRegistration(e) {
-    e.preventDefault();
+function showMessage(message, isError = false) {
+    const registerMessage = document.getElementById('registerMessage');
+    if (registerMessage) {
+        const messageClass = isError ? 'error' : (message.includes('...') ? 'loading' : 'success');
+        registerMessage.innerHTML = `<div class="message ${messageClass}">${message}</div>`;
+    }
+}
+
+function showSuccessRedirect(message, email) {
+    const successMessage = document.getElementById('successMessage');
+    if (successMessage) {
+        successMessage.innerHTML = `
+            <div class="success-redirect">
+                <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                <h3>${message}</h3>
+                <p>Te redirigiremos al login en <span id="countdown">5</span> segundos...</p>
+                <p>O puedes <a href="login.html" style="color: #fff; text-decoration: underline;">hacer clic aquí</a> para ir ahora</p>
+            </div>
+        `;
+        successMessage.style.display = 'block';
+        
+        // Countdown y redirección automática
+        let countdown = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const interval = setInterval(() => {
+            countdown--;
+            if (countdownElement) countdownElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(interval);
+                window.location.href = `login.html?email=${encodeURIComponent(email)}&message=registered`;
+            }
+        }, 1000);
+    }
+}
+
+// =================== MANEJO DEL FORMULARIO ===================
+async function handleRegistration(event) {
+    event.preventDefault();
+    clearMessages();
     
-    const formData = {
-        name: document.getElementById('customerName').value,
-        lastName: document.getElementById('customerLastName').value,
-        email: document.getElementById('customerEmail').value,
-        password: document.getElementById('customerPassword').value,
-        confirmPassword: document.getElementById('customerConfirmPassword').value,
-        phone: document.getElementById('customerPhone').value
-    };
+    console.log('Iniciando proceso de registro...');
     
-    // Validar formulario
-    if (!validateCustomerForm(formData)) {
+    // Obtener valores del formulario
+    const userType = document.getElementById('userType').value;
+    const name = document.getElementById('name').value.trim();
+    const lastName = document.getElementById('lastName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    console.log(`Registrando ${userType}:`, { name, lastName, email });
+
+    // Validaciones básicas
+    if (!name || !lastName || !email || !password) {
+        showMessage('Por favor completa todos los campos obligatorios', true);
         return;
     }
-    
-    // Procesar registro
-    processRegistration('customer', formData);
-}
 
-// Manejar registro de Farmer
-function handleFarmerRegistration(e) {
-    e.preventDefault();
-    
-    const formData = {
-        name: document.getElementById('farmerName').value,
-        lastName: document.getElementById('farmerLastName').value,
-        businessEmail: document.getElementById('farmerEmail').value,
-        password: document.getElementById('farmerPassword').value,
-        location: document.getElementById('farmerLocation').value,
-        phone: document.getElementById('farmerPhone').value,
-        businessName: document.getElementById('farmerBusinessName').value
-    };
-    
-    // Validar formulario
-    if (!validateFarmerForm(formData)) {
+    if (!validateEmail(email)) {
+        showMessage('Por favor ingresa un email válido', true);
         return;
     }
-    
-    // Procesar registro
-    processRegistration('farmer', formData);
-}
 
-// Validar formulario de Customer
-function validateCustomerForm(data) {
-    let isValid = true;
-    
-    // Validar nombre
-    if (!data.name.trim()) {
-        showFieldError('customerName', 'El nombre es requerido');
-        isValid = false;
+    if (password.length < 6) {
+        showMessage('La contraseña debe tener al menos 6 caracteres', true);
+        return;
     }
-    
-    // Validar apellido
-    if (!data.lastName.trim()) {
-        showFieldError('customerLastName', 'El apellido es requerido');
-        isValid = false;
-    }
-    
-    // Validar email
-    if (!validateEmail(data.email)) {
-        showFieldError('customerEmail', 'Email inválido');
-        isValid = false;
-    }
-    
-    // Validar contraseña
-    if (!validatePassword(data.password)) {
-        showFieldError('customerPassword', 'Contraseña debe tener al menos 8 caracteres');
-        isValid = false;
-    }
-    
-    // Validar confirmación de contraseña
-    if (data.password !== data.confirmPassword) {
-        showFieldError('customerConfirmPassword', 'Las contraseñas no coinciden');
-        isValid = false;
-    }
-    
-    // Validar teléfono
-    if (!validatePhone(data.phone)) {
-        showFieldError('customerPhone', 'Teléfono inválido');
-        isValid = false;
-    }
-    
-    return isValid;
-}
 
-// Validar formulario de Farmer
-function validateFarmerForm(data) {
-    let isValid = true;
-    
-    // Validar nombre
-    if (!data.name.trim()) {
-        showFieldError('farmerName', 'El nombre es requerido');
-        isValid = false;
-    }
-    
-    // Validar apellido
-    if (!data.lastName.trim()) {
-        showFieldError('farmerLastName', 'El apellido es requerido');
-        isValid = false;
-    }
-    
-    // Validar business email
-    if (!validateEmail(data.businessEmail)) {
-        showFieldError('farmerEmail', 'Email de negocio inválido');
-        isValid = false;
-    }
-    
-    // Validar contraseña
-    if (!validatePassword(data.password)) {
-        showFieldError('farmerPassword', 'Contraseña debe tener al menos 8 caracteres');
-        isValid = false;
-    }
-    
-    // Validar ubicación
-    if (!data.location.trim()) {
-        showFieldError('farmerLocation', 'La ubicación es requerida');
-        isValid = false;
-    }
-    
-    // Validar teléfono
-    if (!validatePhone(data.phone)) {
-        showFieldError('farmerPhone', 'Teléfono inválido');
-        isValid = false;
-    }
-    
-    // Validar nombre del negocio
-    if (!data.businessName.trim()) {
-        showFieldError('farmerBusinessName', 'El nombre del negocio es requerido');
-        isValid = false;
-    }
-    
-    return isValid;
-}
+    // Preparar datos del usuario
+    const userData = {
+        name: name,
+        lastName: lastName,
+        email: email,
+        password: password,
+        userType: userType
+    };
 
-// Procesar registro
-function processRegistration(type, data) {
-    showLoading(true);
-    
-    // Simular llamada a API
-    setTimeout(() => {
-        showLoading(false);
+    // Agregar campos específicos según el tipo de usuario
+    if (userType === 'customer') {
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const phone = document.getElementById('phone').value.trim();
+
+        if (password !== confirmPassword) {
+            showMessage('Las contraseñas no coinciden', true);
+            return;
+        }
+
+        if (!phone) {
+            showMessage('El teléfono es obligatorio para customers', true);
+            return;
+        }
+
+        if (!validatePhone(phone)) {
+            showMessage('El formato del teléfono debe ser 0000-0000', true);
+            return;
+        }
+
+        userData.phone = phone;
+
+    } else if (userType === 'farmer') {
+        const location = document.getElementById('location').value.trim();
+        const farmerPhone = document.getElementById('farmerPhone').value.trim();
+        const businessName = document.getElementById('businessName').value.trim();
+
+        userData.location = location;
+        userData.phone = farmerPhone;
+        userData.businessName = businessName;
         
-        // Simular registro exitoso
-        const userType = type === 'customer' ? 'Cliente' : 'Agricultor';
-        showMessage(`¡Registro de ${userType} exitoso! Redirigiendo al login...`, 'success');
+        console.log('Datos farmer específicos:', {
+            location: location,
+            phone: farmerPhone,
+            businessName: businessName
+        });
+    }
+
+    console.log('Datos finales a registrar:', userData);
+    showMessage('Creando cuenta...');
+
+    try {
+        // Aquí puedes agregar tu lógica de registro
+        // Por ejemplo, llamada a tu API o servicio de registro
         
-        // Guardar tipo de usuario para el login
-        sessionStorage.setItem('userType', type);
-        sessionStorage.setItem('registrationSuccess', 'true');
-        
-        // Redirigir al login después de 2 segundos
+        // Simulación de proceso de registro (eliminar en producción)
         setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 2000);
-    }, 2500);
+            console.log('¡Registro exitoso!');
+            
+            // Ocultar SOLO el formulario y mostrar éxito
+            const registerForm = document.getElementById('registerFormData');
+            if (registerForm) registerForm.style.display = 'none';
+            
+            showSuccessRedirect(
+                `¡Cuenta de ${userType} creada exitosamente!`,
+                email
+            );
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Error en registro:', error);
+        showMessage('Error interno. Inténtalo de nuevo.', true);
+    }
 }
 
-// Funciones de validación
+// =================== VALIDACIONES ===================
 function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 
-function validatePassword(password) {
-    return password.length >= 8;
-}
-
 function validatePhone(phone) {
-    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{8,}$/;
+    const phoneRegex = /^\d{4}-\d{4}$/;
     return phoneRegex.test(phone);
 }
 
-// Mostrar error en campo específico
-function showFieldError(fieldId, message) {
-    const field = document.getElementById(fieldId);
-    field.classList.add('invalid');
-    field.classList.remove('valid');
+// =================== INICIALIZACIÓN ===================
+function initializeRegistration() {
+    console.log('Inicializando página de registro...');
     
-    // Remover clase de error después de 3 segundos
-    setTimeout(() => {
-        field.classList.remove('invalid');
-    }, 3000);
-    
-    showMessage(message, 'error');
-}
-
-// Configurar validación en tiempo real
-function setupRealTimeValidation() {
-    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="tel"]');
-    
-    inputs.forEach(input => {
-        input.addEventListener('blur', function() {
-            validateSingleField(this);
-        });
-        
-        input.addEventListener('input', function() {
-            // Remover clases de validación mientras el usuario escribe
-            this.classList.remove('valid', 'invalid');
-        });
-    });
-}
-
-// Validar campo individual
-function validateSingleField(field) {
-    const value = field.value.trim();
-    const fieldType = field.type;
-    const fieldId = field.id;
-    
-    let isValid = false;
-    
-    switch(fieldType) {
-        case 'email':
-            isValid = validateEmail(value);
-            break;
-        case 'password':
-            isValid = validatePassword(value);
-            // Validación especial para confirmación de contraseña
-            if (fieldId.includes('ConfirmPassword')) {
-                const passwordField = fieldId === 'customerConfirmPassword' ? 
-                    document.getElementById('customerPassword') : 
-                    document.getElementById('farmerPassword');
-                isValid = value === passwordField.value && validatePassword(value);
-            }
-            break;
-        case 'tel':
-            isValid = validatePhone(value);
-            break;
-        default:
-            isValid = value.length > 0;
-    }
-    
-    if (value.length > 0) {
-        if (isValid) {
-            field.classList.add('valid');
-            field.classList.remove('invalid');
-        } else {
-            field.classList.add('invalid');
-            field.classList.remove('valid');
-        }
+    // Configurar formulario
+    const registerForm = document.getElementById('registerFormData');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegistration);
+        console.log('✅ Formulario de registro configurado');
     } else {
-        field.classList.remove('valid', 'invalid');
+        console.error('❌ Formulario de registro no encontrado');
     }
+    
+    // Configurar sistema de imágenes
+    setupImagePreloading();
+    
+    // Configurar botones de tipo de usuario
+    setupUserTypeButtons();
+    
+    // Configurar iconos de mostrar/ocultar contraseña
+    setTimeout(() => {
+        setupPasswordToggle();
+    }, 100); // Pequeño delay para asegurar que el DOM esté listo
+    
+    // Establecer tipo de usuario por defecto
+    setUserType('farmer');
+    
+    console.log('✅ Página de registro inicializada');
 }
 
-// Configurar efectos visuales para inputs
-function setupInputEffects() {
-    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="tel"]');
+// =================== INICIALIZACIÓN AL CARGAR ===================
+document.addEventListener('DOMContentLoaded', initializeRegistration);
+
+if (document.readyState === 'loading') {
+    console.log('Esperando carga del DOM...');
+} else {
+    console.log('DOM ya cargado, inicializando...');
+    initializeRegistration();
+}// Image switching functionality for register form
+function setUserType(type) {
+    const userTypeInput = document.getElementById('userType');
+    const customerFields = document.getElementById('customerFields');
+    const farmerFields = document.getElementById('farmerFields');
+    const registerBtn = document.getElementById('registerBtn');
+    const imageSection = document.getElementById('imageSection');
+    const farmerBg = document.getElementById('farmerBg');
+    const customerBg = document.getElementById('customerBg');
     
-    inputs.forEach(input => {
-        input.addEventListener('focus', function() {
-            this.parentElement.classList.add('focused');
-        });
-        
-        input.addEventListener('blur', function() {
-            this.parentElement.classList.remove('focused');
-        });
+    // Remove active class from all buttons
+    document.querySelectorAll('.user-type-btn').forEach(btn => {
+        btn.classList.remove('active');
     });
-}
-
-// Redirigir al login
-function redirectToLogin() {
-    showMessage('Redirigiendo al login...', 'info');
-    setTimeout(() => {
-        window.location.href = 'index.html';
-    }, 1000);
-}
-
-// Registro con Google
-function registerWithGoogle() {
-    const userType = currentFormType === 'customer' ? 'Cliente' : 'Agricultor';
-    showMessage(`Registrando ${userType} con Google...`, 'info');
     
-    setTimeout(() => {
-        showMessage('Funcionalidad de Google en desarrollo', 'info');
-    }, 1500);
-}
-
-// Registro con Facebook
-function registerWithFacebook() {
-    const userType = currentFormType === 'customer' ? 'Cliente' : 'Agricultor';
-    showMessage(`Registrando ${userType} con Facebook...`, 'info');
+    // Add active class to clicked button
+    event.target.classList.add('active');
     
-    setTimeout(() => {
-        showMessage('Funcionalidad de Facebook en desarrollo', 'info');
-    }, 1500);
-}
-
-// Función para mostrar mensajes
-function showMessage(message, type) {
-    // Remover mensaje anterior si existe
-    const existingMessage = document.querySelector('.message');
-    if (existingMessage) {
-        existingMessage.remove();
-    }
+    // Update hidden input
+    userTypeInput.value = type;
     
-    // Crear nuevo mensaje
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${type}`;
-    messageDiv.textContent = message;
+    // Add transition class
+    imageSection.classList.add('transitioning');
     
-    // Estilos para el mensaje
-    messageDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 25px;
-        font-weight: 500;
-        font-size: 0.9rem;
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-        max-width: 300px;
-        word-wrap: break-word;
-    `;
-    
-    // Colores según el tipo
-    switch(type) {
-        case 'success':
-            messageDiv.style.background = '#4CAF50';
-            messageDiv.style.color = 'white';
-            break;
-        case 'error':
-            messageDiv.style.background = '#f44336';
-            messageDiv.style.color = 'white';
-            break;
-        case 'warning':
-            messageDiv.style.background = '#ff9800';
-            messageDiv.style.color = 'white';
-            break;
-        case 'info':
-            messageDiv.style.background = '#2196F3';
-            messageDiv.style.color = 'white';
-            break;
-    }
-    
-    // Agregar al DOM
-    document.body.appendChild(messageDiv);
-    
-    // Auto-remover después de 4 segundos
-    setTimeout(() => {
-        if (messageDiv.parentNode) {
-            messageDiv.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                messageDiv.remove();
-            }, 300);
-        }
-    }, 4000);
-}
-
-// Función para mostrar/ocultar loading
-function showLoading(show) {
-    const activeForm = currentFormType === 'customer' ? 
-        document.getElementById('customerForm') : 
-        document.getElementById('farmerForm');
-    
-    const button = activeForm.querySelector('.create-account-btn');
-    
-    if (show) {
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
-        button.style.opacity = '0.7';
-        activeForm.classList.add('loading');
+    if (type === 'customer') {
+        // Show customer fields, hide farmer fields
+        customerFields.classList.remove('hidden');
+        farmerFields.classList.add('hidden');
+        
+        // Update button text
+        registerBtn.textContent = 'Crear cuenta de customer';
+        
+        // Switch to customer mode
+        imageSection.classList.add('customer-mode');
+        
+        // Switch images
+        farmerBg.classList.add('hidden');
+        customerBg.classList.remove('hidden');
+        
     } else {
-        button.disabled = false;
-        if (currentFormType === 'customer') {
-            button.innerHTML = 'Create a personal account';
-        } else {
-            button.innerHTML = 'Create a farmer account';
-        }
-        button.style.opacity = '1';
-        activeForm.classList.remove('loading');
+        // Show farmer fields, hide customer fields
+        farmerFields.classList.remove('hidden');
+        customerFields.classList.add('hidden');
+        
+        // Update button text
+        registerBtn.textContent = 'Crear cuenta de farmer';
+        
+        // Remove customer mode
+        imageSection.classList.remove('customer-mode');
+        
+        // Switch images
+        customerBg.classList.add('hidden');
+        farmerBg.classList.remove('hidden');
     }
+    
+    // Remove transition class after animation completes
+    setTimeout(() => {
+        imageSection.classList.remove('transitioning');
+    }, 800);
 }
 
-// Agregar estilos para las animaciones
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-    
-    .input-group.focused {
-        transform: scale(1.02);
-        transition: transform 0.2s ease;
-    }
-    
-    .fa-spinner {
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    
-    /* Efectos de hover para inputs */
-    input[type="text"]:hover,
-    input[type="email"]:hover,
-    input[type="password"]:hover,
-    input[type="tel"]:hover {
-        border-color: #c5c5c5;
-        transform: translateY(-1px);
-    }
-    
-    /* Animación para cambio de formularios */
-    .form-container {
-        transition: all 0.3s ease;
-    }
-    
-    /* Efectos para botones de toggle */
-    .toggle-btn {
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .toggle-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.5s;
-    }
-    
-    .toggle-btn:hover::before {
-        left: 100%;
-    }
-`;
-document.head.appendChild(style);
-
-// Función para manejar el estado inicial basado en parámetros URL
-function handleInitialState() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const formType = urlParams.get('type');
-    
-    if (formType === 'farmer') {
-        switchForm('farmer');
-    }
-    
-    // Mostrar mensaje si viene del login
-    if (sessionStorage.getItem('fromLogin') === 'true') {
-        sessionStorage.removeItem('fromLogin');
-        showMessage('Crear nueva cuenta', 'info');
-    }
-}
-
-// Ejecutar función inicial cuando cargue la página
+// Ensure images are loaded properly on page load
 document.addEventListener('DOMContentLoaded', function() {
-    handleInitialState();
+    const farmerBg = document.getElementById('farmerBg');
+    const customerBg = document.getElementById('customerBg');
+    
+    // Preload both images
+    if (farmerBg && customerBg) {
+        const farmerImg = new Image();
+        const customerImg = new Image();
+        
+        farmerImg.src = farmerBg.src;
+        customerImg.src = customerBg.src;
+        
+        // Set initial state
+        farmerBg.classList.remove('hidden');
+        customerBg.classList.add('hidden');
+    }
 });
 
-// Función para validar fuerza de contraseña
-function validatePasswordStrength(password) {
-    let strength = 0;
-    let feedback = [];
+// Optional: Add smooth transitions for better UX
+function addImageTransitionListeners() {
+    const backgroundImages = document.querySelectorAll('.background-image');
     
-    // Longitud mínima
-    if (password.length >= 8) {
-        strength += 1;
-    } else {
-        feedback.push('Al menos 8 caracteres');
-    }
-    
-    // Contiene mayúsculas
-    if (/[A-Z]/.test(password)) {
-        strength += 1;
-    } else {
-        feedback.push('Al menos una mayúscula');
-    }
-    
-    // Contiene minúsculas
-    if (/[a-z]/.test(password)) {
-        strength += 1;
-    } else {
-        feedback.push('Al menos una minúscula');
-    }
-    
-    // Contiene números
-    if (/[0-9]/.test(password)) {
-        strength += 1;
-    } else {
-        feedback.push('Al menos un número');
-    }
-    
-    // Contiene caracteres especiales
-    if (/[^A-Za-z0-9]/.test(password)) {
-        strength += 1;
-    } else {
-        feedback.push('Al menos un carácter especial');
-    }
-    
-    return {
-        strength: strength,
-        feedback: feedback,
-        isStrong: strength >= 3
-    };
-}
-
-// Función mejorada para mostrar indicador de fuerza de contraseña
-function showPasswordStrength(inputId, password) {
-    const input = document.getElementById(inputId);
-    let indicator = input.parentElement.querySelector('.password-strength');
-    
-    if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.className = 'password-strength';
-        indicator.style.cssText = `
-            margin-top: 5px;
-            height: 4px;
-            border-radius: 2px;
-            background: #e1e8ed;
-            position: relative;
-            overflow: hidden;
-        `;
-        input.parentElement.appendChild(indicator);
-    }
-    
-    const result = validatePasswordStrength(password);
-    const percentage = (result.strength / 5) * 100;
-    
-    let color = '#dc3545'; // Rojo
-    if (result.strength >= 3) color = '#ffc107'; // Amarillo
-    if (result.strength >= 4) color = '#28a745'; // Verde
-    
-    indicator.innerHTML = `<div style="width: ${percentage}%; height: 100%; background: ${color}; transition: all 0.3s ease;"></div>`;
-}
-
-// Mejorar la validación en tiempo real para incluir fuerza de contraseña
-function enhancePasswordValidation() {
-    const passwordInputs = document.querySelectorAll('input[type="password"]');
-    
-    passwordInputs.forEach(input => {
-        if (input.id.includes('Password') && !input.id.includes('Confirm')) {
-            input.addEventListener('input', function() {
-                if (this.value.length > 0) {
-                    showPasswordStrength(this.id, this.value);
-                }
-            });
-        }
+    backgroundImages.forEach(img => {
+        img.addEventListener('load', function() {
+            this.style.opacity = '1';
+        });
+        
+        img.addEventListener('error', function() {
+            console.warn('Failed to load image:', this.src);
+            // You could add a fallback image here
+        });
     });
 }
 
-// Ejecutar mejoras cuando cargue el DOM
-document.addEventListener('DOMContentLoaded', function() {
-    enhancePasswordValidation();
-});
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', addImageTransitionListeners);
