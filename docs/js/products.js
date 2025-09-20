@@ -77,6 +77,17 @@ document.addEventListener('DOMContentLoaded', function() {
             button.textContent = '♥';
             button.style.color = '#ff4757';
             button.style.background = 'rgba(255, 255, 255, 0.95)';
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const addButtons = document.querySelectorAll('.add-btn');
+                
+                addButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        alert('Producto añadido al carrito 🛒');
+                    });
+                });
+            });
+
             
             // Add animation
             button.style.transform = 'scale(1.3)';
