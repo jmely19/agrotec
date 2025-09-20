@@ -632,7 +632,7 @@ body {
 /* We Are AGROTEC Section */
 .we-are-section {
   background-color: #ffffff;
-  min-height: 70vh; /* 100% del alto de la ventana */
+  min-height: 60vh; /* 100% del alto de la ventana */
   display: flex;
   align-items: center; /* centra verticalmente */
 }
@@ -1228,4 +1228,5 @@ body {
         line-height: 1.4;
     }
 }
+
 
