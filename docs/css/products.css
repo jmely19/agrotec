@@ -552,7 +552,7 @@ body {
 
 /* Hero Section */
 .hero-section {
-    background: url("img/products/photo-1560493676-04071c5") center/cover no-repeat;
+    background: url("/docs/img/products/photo-1560493676-04071c5f467b.jpg") center/cover no-repeat;
     height: 315px;              /* Más alto, como en Products */
     display: flex;
     flex-direction: column;
@@ -1382,4 +1382,3 @@ body {
         --container-padding: var(--spacing-2xl);
     }
 }
-
