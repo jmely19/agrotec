@@ -1,9 +1,9 @@
-// =================== CONFIGURACIÓN ===================
+// =================== CONFIGURATION ===================
 let currentUserType = 'farmer';
 
-// =================== FUNCIONES DE INTERFAZ ===================
+// =================== INTERFACE FUNCTIONS ===================
 function setUserType(type) {
-    console.log(`Cambiando tipo de usuario a: ${type}`);
+    console.log(`Changing user type to: ${type}`);
     currentUserType = type;
     
     const userTypeInput = document.getElementById('userType');
@@ -13,14 +13,18 @@ function setUserType(type) {
 
     const customerBtn = document.querySelector('.user-type-btn:first-child');
     const farmerBtn = document.querySelector('.user-type-btn:last-child');
-    const imageSection = document.getElementById('imageSection');
-    const farmerBg = document.getElementById('farmerBg');
-    const customerBg = document.getElementById('customerBg');
+    
+    // Get images
+    const farmerImg = document.querySelector('.farmer-bg');
+    const customerImg = document.querySelector('.customer-bg');
+    const imageSection = document.querySelector('.image-section');
 
     if (type === 'customer') {
+        // Update buttons
         if (customerBtn) customerBtn.classList.add('active');
         if (farmerBtn) farmerBtn.classList.remove('active');
         
+        // Update form fields
         const customerFields = document.getElementById('customerFields');
         const farmerFields = document.getElementById('farmerFields');
         const registerBtn = document.getElementById('registerBtn');
@@ -28,28 +32,30 @@ function setUserType(type) {
         
         if (customerFields) customerFields.classList.remove('hidden');
         if (farmerFields) farmerFields.classList.add('hidden');
-        if (registerBtn) registerBtn.textContent = 'Crear cuenta personal';
-        if (emailInput) emailInput.placeholder = 'E-mail personal';
+        if (registerBtn) registerBtn.textContent = 'Create personal account';
+        if (emailInput) emailInput.placeholder = 'Personal E-mail';
         
-        // Cambiar imágenes
-        if (imageSection) {
+        // Change image to customer
+        if (farmerImg && customerImg && imageSection) {
             imageSection.classList.add('transitioning');
             imageSection.classList.add('customer-mode');
             
-            // Cambiar visibilidad de imágenes
-            if (farmerBg) farmerBg.classList.add('hidden');
-            if (customerBg) customerBg.classList.remove('hidden');
+            // Change images
+            farmerImg.classList.remove('active');
+            customerImg.classList.add('active');
             
-            // Remover la clase de transición después de la animación
+            // Remove transition class after animation
             setTimeout(() => {
                 imageSection.classList.remove('transitioning');
             }, 800);
         }
         
     } else if (type === 'farmer') {
+        // Update buttons
         if (customerBtn) customerBtn.classList.remove('active');
         if (farmerBtn) farmerBtn.classList.add('active');
         
+        // Update form fields
         const customerFields = document.getElementById('customerFields');
         const farmerFields = document.getElementById('farmerFields');
         const registerBtn = document.getElementById('registerBtn');
@@ -57,29 +63,29 @@ function setUserType(type) {
         
         if (customerFields) customerFields.classList.add('hidden');
         if (farmerFields) farmerFields.classList.remove('hidden');
-        if (registerBtn) registerBtn.textContent = 'Crear cuenta de farmer';
-        if (emailInput) emailInput.placeholder = 'E-mail del negocio';
+        if (registerBtn) registerBtn.textContent = 'Create farmer account';
+        if (emailInput) emailInput.placeholder = 'Business E-mail';
         
-        // Cambiar imágenes
-        if (imageSection) {
+        // Change image to farmer (default image)
+        if (farmerImg && customerImg && imageSection) {
             imageSection.classList.add('transitioning');
             imageSection.classList.remove('customer-mode');
             
-            // Cambiar visibilidad de imágenes
-            if (customerBg) customerBg.classList.add('hidden');
-            if (farmerBg) farmerBg.classList.remove('hidden');
+            // Change images
+            customerImg.classList.remove('active');
+            farmerImg.classList.add('active');
             
-            // Remover la clase de transición después de la animación
+            // Remove transition class after animation
             setTimeout(() => {
                 imageSection.classList.remove('transitioning');
             }, 800);
         }
     }
     
-    console.log(`Interfaz actualizada para tipo: ${type}`);
+    console.log(`Interface updated for type: ${type}`);
 }
 
-// =================== CONFIGURAR EVENT LISTENERS PARA BOTONES ===================
+// =================== SETUP EVENT LISTENERS FOR BUTTONS ===================
 function setupUserTypeButtons() {
     const customerBtn = document.querySelector('.user-type-btn:first-child');
     const farmerBtn = document.querySelector('.user-type-btn:last-child');
@@ -92,29 +98,29 @@ function setupUserTypeButtons() {
         farmerBtn.addEventListener('click', () => setUserType('farmer'));
     }
     
-    console.log('✅ Event listeners para botones de tipo de usuario configurados');
+    console.log('✅ Event listeners for user type buttons configured');
 }
 
-// =================== FUNCIÓN PARA MOSTRAR/OCULTAR CONTRASEÑA ===================
+// =================== PASSWORD TOGGLE FUNCTION ===================
 function setupPasswordToggle() {
-    // Buscar todos los campos de contraseña
+    // Find all password fields
     const passwordFields = document.querySelectorAll('input[type="password"]');
     
-    // IDs de campos que NO quieres que tengan el ícono del ojo
-    const excludedFields = ['password', 'confirmPassword']; // Agrega o quita IDs según necesites
+    // IDs of fields that you DON'T want to have the eye icon (empty array means all fields get the icon)
+    const excludedFields = []; // Removed 'password' and 'confirmPassword' to enable toggle on all fields
     
     passwordFields.forEach(passwordField => {
-        // Saltar si el campo está en la lista de excluidos
+        // Skip if field is in excluded list
         if (excludedFields.includes(passwordField.id)) {
-            console.log(`Saltando ícono para campo: ${passwordField.id}`);
+            console.log(`Skipping icon for field: ${passwordField.id}`);
             return;
         }
         
-        // Crear el contenedor para el icono
+        // Create container for icon
         const fieldContainer = passwordField.parentElement;
         fieldContainer.style.position = 'relative';
         
-        // Crear el icono de mostrar/ocultar
+        // Create show/hide icon
         const toggleIcon = document.createElement('span');
         toggleIcon.innerHTML = '<i class="fas fa-eye"></i>';
         toggleIcon.className = 'password-toggle-icon';
@@ -131,7 +137,7 @@ function setupPasswordToggle() {
             transition: color 0.3s ease;
         `;
         
-        // Agregar hover effect
+        // Add hover effect
         toggleIcon.addEventListener('mouseenter', () => {
             toggleIcon.style.color = '#4CAF50';
         });
@@ -140,58 +146,29 @@ function setupPasswordToggle() {
             toggleIcon.style.color = '#a0aec0';
         });
         
-        // Función para alternar visibilidad
+        // Function to toggle visibility
         toggleIcon.addEventListener('click', () => {
             const isPassword = passwordField.type === 'password';
             
             if (isPassword) {
                 passwordField.type = 'text';
                 toggleIcon.innerHTML = '<i class="fas fa-eye-slash"></i>';
-                toggleIcon.title = 'Ocultar contraseña';
+                toggleIcon.title = 'Hide password';
             } else {
                 passwordField.type = 'password';
                 toggleIcon.innerHTML = '<i class="fas fa-eye"></i>';
-                toggleIcon.title = 'Mostrar contraseña';
+                toggleIcon.title = 'Show password';
             }
         });
         
-        // Agregar el icono al contenedor
+        // Add icon to container
         fieldContainer.appendChild(toggleIcon);
         
-        // Ajustar padding del input para que no se superponga con el icono
+        // Adjust input padding so it doesn't overlap with icon
         passwordField.style.paddingRight = '60px';
     });
     
-    console.log('✅ Iconos de mostrar/ocultar contraseña configurados');
-}
-
-// =================== PRECARGAR Y CONFIGURAR IMÁGENES ===================
-function setupImagePreloading() {
-    const farmerBg = document.getElementById('farmerBg');
-    const customerBg = document.getElementById('customerBg');
-    
-    if (farmerBg && customerBg) {
-        // Precargar ambas imágenes para transiciones suaves
-        const farmerImg = new Image();
-        const customerImg = new Image();
-        
-        farmerImg.onload = () => console.log('✅ Imagen farmer precargada');
-        customerImg.onload = () => console.log('✅ Imagen customer precargada');
-        
-        farmerImg.onerror = () => console.error('❌ Error cargando imagen farmer');
-        customerImg.onerror = () => console.error('❌ Error cargando imagen customer');
-        
-        farmerImg.src = farmerBg.src;
-        customerImg.src = customerBg.src;
-        
-        // Configurar estado inicial
-        farmerBg.classList.remove('hidden');
-        customerBg.classList.add('hidden');
-        
-        console.log('✅ Sistema de imágenes configurado');
-    } else {
-        console.warn('⚠️ No se encontraron las imágenes de fondo');
-    }
+    console.log('✅ Show/hide password icons configured');
 }
 
 function clearMessages() {
@@ -220,13 +197,13 @@ function showSuccessRedirect(message, email) {
             <div class="success-redirect">
                 <i class="fas fa-check-circle" style="font-size: 48px; margin-bottom: 15px;"></i>
                 <h3>${message}</h3>
-                <p>Te redirigiremos al login en <span id="countdown">5</span> segundos...</p>
-                <p>O puedes <a href="login.html" style="color: #fff; text-decoration: underline;">hacer clic aquí</a> para ir ahora</p>
+                <p>We'll redirect you to login in <span id="countdown">5</span> seconds...</p>
+                <p>Or you can <a href="login.html" style="color: #fff; text-decoration: underline;">click here</a> to go now</p>
             </div>
         `;
         successMessage.style.display = 'block';
         
-        // Countdown y redirección automática
+        // Countdown and automatic redirection
         let countdown = 5;
         const countdownElement = document.getElementById('countdown');
         
@@ -242,39 +219,40 @@ function showSuccessRedirect(message, email) {
     }
 }
 
-// =================== MANEJO DEL FORMULARIO ===================
+// =================== FORM HANDLING ===================
 async function handleRegistration(event) {
     event.preventDefault();
     clearMessages();
     
-    console.log('Iniciando proceso de registro...');
+    console.log('Starting registration process...');
     
-    // Obtener valores del formulario
+    // Check if database-simulator.js is loaded
+    if (typeof window.registerUser !== 'function') {
+        showMessage('Database system not available. Please reload the page.', true);
+        return;
+    }
+    
+    // Get form values
     const userType = document.getElementById('userType').value;
     const name = document.getElementById('name').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
-    console.log(`Registrando ${userType}:`, { name, lastName, email });
+    console.log(`Registering ${userType}:`, { name, lastName, email });
 
-    // Validaciones básicas
+    // Basic validations
     if (!name || !lastName || !email || !password) {
-        showMessage('Por favor completa todos los campos obligatorios', true);
-        return;
-    }
-
-    if (!validateEmail(email)) {
-        showMessage('Por favor ingresa un email válido', true);
+        showMessage('Please complete all required fields', true);
         return;
     }
 
     if (password.length < 6) {
-        showMessage('La contraseña debe tener al menos 6 caracteres', true);
+        showMessage('Password must be at least 6 characters long', true);
         return;
     }
 
-    // Preparar datos del usuario
+    // Prepare user data
     const userData = {
         name: name,
         lastName: lastName,
@@ -283,23 +261,18 @@ async function handleRegistration(event) {
         userType: userType
     };
 
-    // Agregar campos específicos según el tipo de usuario
+    // Add specific fields by user type
     if (userType === 'customer') {
         const confirmPassword = document.getElementById('confirmPassword').value;
         const phone = document.getElementById('phone').value.trim();
 
         if (password !== confirmPassword) {
-            showMessage('Las contraseñas no coinciden', true);
+            showMessage('Passwords do not match', true);
             return;
         }
 
         if (!phone) {
-            showMessage('El teléfono es obligatorio para customers', true);
-            return;
-        }
-
-        if (!validatePhone(phone)) {
-            showMessage('El formato del teléfono debe ser 0000-0000', true);
+            showMessage('Phone number is required for customers', true);
             return;
         }
 
@@ -310,45 +283,52 @@ async function handleRegistration(event) {
         const farmerPhone = document.getElementById('farmerPhone').value.trim();
         const businessName = document.getElementById('businessName').value.trim();
 
+        // CORRECTION: Save farmer's phone with correct name
         userData.location = location;
-        userData.phone = farmerPhone;
+        userData.phone = farmerPhone; // Change from farmerPhone to phone to match DB
         userData.businessName = businessName;
         
-        console.log('Datos farmer específicos:', {
+        // Debug to verify farmer data
+        console.log('Farmer specific data:', {
             location: location,
             phone: farmerPhone,
             businessName: businessName
         });
     }
 
-    console.log('Datos finales a registrar:', userData);
-    showMessage('Creando cuenta...');
+    console.log('Final data to register:', userData);
+    showMessage('Creating account...');
 
     try {
-        // Aquí puedes agregar tu lógica de registro
-        // Por ejemplo, llamada a tu API o servicio de registro
+        // Call database-simulator.js function directly
+        const result = window.registerUser(userData);
         
-        // Simulación de proceso de registro (eliminar en producción)
-        setTimeout(() => {
-            console.log('¡Registro exitoso!');
+        console.log('Registration result:', result);
+
+        if (result && result.success) {
+            console.log('Registration successful!');
             
-            // Ocultar SOLO el formulario y mostrar éxito
+            // Hide ONLY the form and show success
             const registerForm = document.getElementById('registerFormData');
             if (registerForm) registerForm.style.display = 'none';
             
             showSuccessRedirect(
-                `¡Cuenta de ${userType} creada exitosamente!`,
+                `${userType} account created successfully!`,
                 email
             );
-        }, 1500);
+            
+        } else {
+            console.error('Registration error:', result?.error);
+            showMessage(result?.error || 'Error creating account', true);
+        }
         
     } catch (error) {
-        console.error('Error en registro:', error);
-        showMessage('Error interno. Inténtalo de nuevo.', true);
+        console.error('Registration error:', error);
+        showMessage('Internal error. Please try again.', true);
     }
 }
 
-// =================== VALIDACIONES ===================
+// =================== VALIDATIONS ===================
 function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -359,139 +339,109 @@ function validatePhone(phone) {
     return phoneRegex.test(phone);
 }
 
-// =================== INICIALIZACIÓN ===================
+// =================== INITIALIZATION ===================
 function initializeRegistration() {
-    console.log('Inicializando página de registro...');
+    console.log('Initializing registration page...');
     
-    // Configurar formulario
+    // Check connection with database-simulator.js
+    setTimeout(() => {
+        if (typeof window.registerUser === 'function') {
+            console.log('✅ Database connection established');
+        } else {
+            console.error('❌ Error: database-simulator.js not loaded');
+            showMessage('System error. Please reload the page.', true);
+        }
+    }, 500);
+    
+    // Configure form
     const registerForm = document.getElementById('registerFormData');
     if (registerForm) {
         registerForm.addEventListener('submit', handleRegistration);
-        console.log('✅ Formulario de registro configurado');
+        console.log('✅ Registration form configured');
     } else {
-        console.error('❌ Formulario de registro no encontrado');
+        console.error('❌ Registration form not found');
     }
     
-    // Configurar sistema de imágenes
-    setupImagePreloading();
-    
-    // Configurar botones de tipo de usuario
+    // Configure user type buttons
     setupUserTypeButtons();
     
-    // Configurar iconos de mostrar/ocultar contraseña
+    // Configure show/hide password icons
     setTimeout(() => {
         setupPasswordToggle();
-    }, 100); // Pequeño delay para asegurar que el DOM esté listo
+    }, 100); // Small delay to ensure DOM is ready
     
-    // Establecer tipo de usuario por defecto
+    // Set default user type
     setUserType('farmer');
     
-    console.log('✅ Página de registro inicializada');
+    console.log('✅ Registration page initialized');
 }
 
-// =================== INICIALIZACIÓN AL CARGAR ===================
+// =================== DEBUG FUNCTIONS ===================
+window.registerDebug = {
+    testRegistration: () => {
+        const testData = {
+            name: 'Test',
+            lastName: 'User',
+            email: 'test@example.com',
+            password: '123456',
+            userType: 'farmer',
+            location: 'Test Location',
+            phone: '6000-1234',
+            businessName: 'Test Business'
+        };
+        
+        console.log('Testing registration with:', testData);
+        return window.registerUser(testData);
+    },
+    
+    checkConnection: () => {
+        console.log('System status:');
+        console.log('- registerUser available:', typeof window.registerUser === 'function');
+        console.log('- currentUserType:', currentUserType);
+        console.log('- Form found:', !!document.getElementById('registerFormData'));
+        
+        const farmerImg = document.querySelector('.farmer-bg');
+        const customerImg = document.querySelector('.customer-bg');
+        console.log('- Farmer image found:', !!farmerImg);
+        console.log('- Customer image found:', !!customerImg);
+        console.log('- Farmer image active:', farmerImg?.classList.contains('active'));
+        console.log('- Customer image active:', customerImg?.classList.contains('active'));
+        
+        if (typeof window.databaseDebug === 'object') {
+            console.log('- Current data:', window.databaseDebug.showData());
+        }
+    },
+    
+    fillTestData: () => {
+        document.getElementById('name').value = 'Test';
+        document.getElementById('lastName').value = 'Farmer';
+        document.getElementById('email').value = 'test@farmer.com';
+        document.getElementById('password').value = '123456';
+        document.getElementById('location').value = 'Test City';
+        document.getElementById('farmerPhone').value = '6000-1234';
+        document.getElementById('businessName').value = 'Test Farm';
+        
+        console.log('Test data filled');
+    },
+    
+    testImageSwitch: () => {
+        console.log('Testing image switching...');
+        console.log('Switching to customer...');
+        setUserType('customer');
+        
+        setTimeout(() => {
+            console.log('Switching to farmer...');
+            setUserType('farmer');
+        }, 2000);
+    }
+};
+
+// =================== INITIALIZATION ON LOAD ===================
 document.addEventListener('DOMContentLoaded', initializeRegistration);
 
 if (document.readyState === 'loading') {
-    console.log('Esperando carga del DOM...');
+    console.log('Waiting for DOM to load...');
 } else {
-    console.log('DOM ya cargado, inicializando...');
+    console.log('DOM already loaded, initializing...');
     initializeRegistration();
-}// Image switching functionality for register form
-function setUserType(type) {
-    const userTypeInput = document.getElementById('userType');
-    const customerFields = document.getElementById('customerFields');
-    const farmerFields = document.getElementById('farmerFields');
-    const registerBtn = document.getElementById('registerBtn');
-    const imageSection = document.getElementById('imageSection');
-    const farmerBg = document.getElementById('farmerBg');
-    const customerBg = document.getElementById('customerBg');
-    
-    // Remove active class from all buttons
-    document.querySelectorAll('.user-type-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // Add active class to clicked button
-    event.target.classList.add('active');
-    
-    // Update hidden input
-    userTypeInput.value = type;
-    
-    // Add transition class
-    imageSection.classList.add('transitioning');
-    
-    if (type === 'customer') {
-        // Show customer fields, hide farmer fields
-        customerFields.classList.remove('hidden');
-        farmerFields.classList.add('hidden');
-        
-        // Update button text
-        registerBtn.textContent = 'Crear cuenta de customer';
-        
-        // Switch to customer mode
-        imageSection.classList.add('customer-mode');
-        
-        // Switch images
-        farmerBg.classList.add('hidden');
-        customerBg.classList.remove('hidden');
-        
-    } else {
-        // Show farmer fields, hide customer fields
-        farmerFields.classList.remove('hidden');
-        customerFields.classList.add('hidden');
-        
-        // Update button text
-        registerBtn.textContent = 'Crear cuenta de farmer';
-        
-        // Remove customer mode
-        imageSection.classList.remove('customer-mode');
-        
-        // Switch images
-        customerBg.classList.add('hidden');
-        farmerBg.classList.remove('hidden');
-    }
-    
-    // Remove transition class after animation completes
-    setTimeout(() => {
-        imageSection.classList.remove('transitioning');
-    }, 800);
 }
-
-// Ensure images are loaded properly on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const farmerBg = document.getElementById('farmerBg');
-    const customerBg = document.getElementById('customerBg');
-    
-    // Preload both images
-    if (farmerBg && customerBg) {
-        const farmerImg = new Image();
-        const customerImg = new Image();
-        
-        farmerImg.src = farmerBg.src;
-        customerImg.src = customerBg.src;
-        
-        // Set initial state
-        farmerBg.classList.remove('hidden');
-        customerBg.classList.add('hidden');
-    }
-});
-
-// Optional: Add smooth transitions for better UX
-function addImageTransitionListeners() {
-    const backgroundImages = document.querySelectorAll('.background-image');
-    
-    backgroundImages.forEach(img => {
-        img.addEventListener('load', function() {
-            this.style.opacity = '1';
-        });
-        
-        img.addEventListener('error', function() {
-            console.warn('Failed to load image:', this.src);
-            // You could add a fallback image here
-        });
-    });
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', addImageTransitionListeners);
