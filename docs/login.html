@@ -1,27 +1,12 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="AGROTEC - Iniciar Sesión en tu cuenta">
-    <meta name="author" content="AGROTEC">
-    
-    <title>AGROTEC - Iniciar Sesión</title>
-    <link rel="canonical" href="https://agrotec.com/login">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AGROTEC - Sign In</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/login.css" />
+    <link rel="stylesheet" href="css/savings.css">
     
     <style>
         .message {
@@ -58,7 +43,7 @@
         
         .database-access {
             position: fixed;
-            top: 100px;
+            top: 20px;
             right: 20px;
             background: #28a745;
             color: white;
@@ -68,7 +53,7 @@
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
             transition: all 0.3s ease;
-            z-index: 999;
+            z-index: 1000;
         }
         
         .database-access:hover {
@@ -77,21 +62,16 @@
             color: white;
             text-decoration: none;
         }
-
-        /* Ajuste para que el contenido principal no se superponga con el header fijo */
-        .main-container {
-            margin-top: 80px;
-        }
     </style>
 </head>
 <body>
-    <!-- Header/Navigation -->
+        <!-- Header/Navigation -->
     <header class="header" role="banner">
         <nav class="navbar" role="navigation" aria-label="Main navigation">
             <div class="container">
                 <!-- Logo -->
                 <div class="navbar__brand">
-                    <a href="index.html" class="navbar__logo" aria-label="AGROTEC Home">
+                    <a href="#" class="navbar__logo" aria-label="AGROTEC Home">
                         <img src="img/logo.png" alt="AGROTEC Logo" class="navbar__logo-img">
                     </a>
                 </div>
@@ -118,7 +98,7 @@
                     </li>
                 </ul>
                 
-                <!-- User Actions -->
+    <!-- User Actions -->
                 <div class="navbar__actions">
                     <div class="navbar__dropdown">
                         <button class="navbar__action navbar__dropdown-toggle" aria-label="User account" aria-expanded="false">
@@ -137,14 +117,14 @@
                                         </svg>
                                     </div>
                                     <div class="navbar__dropdown-info">
-                                        <span class="navbar__dropdown-name">Mi Cuenta</span>
-                                        <span class="navbar__dropdown-email">usuario@agrotec.com</span>
+                                        <span class="navbar__dropdown-name">My Account</span>
+                                        <span class="navbar__dropdown-email">user@agrotec.com</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="navbar__dropdown-divider"></div>
                             <ul class="navbar__dropdown-list">
-                                <li><a href="login.html" class="navbar__dropdown-link navbar__link--active">
+                                <li><a href="login.html" class="navbar__dropdown-link">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                         <circle cx="12" cy="7" r="4"></circle>
@@ -158,14 +138,14 @@
                                         <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                     </svg>
-                                    Registro
+                                    Register
                                 </a></li>
                                 <li><a href="#" class="navbar__dropdown-link">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
                                         <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
-                                    Configuración
+                                    Settings
                                 </a></li>
                             </ul>
                             <div class="navbar__dropdown-divider"></div>
@@ -176,7 +156,7 @@
                                         <polyline points="16,17 21,12 16,7"></polyline>
                                         <line x1="21" x2="9" y1="12" y2="12"></line>
                                     </svg>
-                                    Cerrar Sesión
+                                    Sign Out
                                 </a></li>
                             </ul>
                         </div>
@@ -201,54 +181,54 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
-    <main class="main-container" role="main">
+
+    <div class="main-container">
         <!-- Image Section -->
         <div class="image-section">
-            <img src="img/login-imagenes/fondodeagricultor.avif" alt="Agricultor trabajando en el campo" class="background-image" />
+            <img src="/docs/img/login-imagenes/fondodeagricultor.avif" alt="Farmer background" class="background-image">
         </div>
 
         <!-- Form Section -->
         <div class="form-section">
             <!-- LOGIN FORM ONLY -->
             <div id="loginForm">
-                <h2 class="login-title">Conectar a mi cuenta</h2>
-                <p class="login-subtitle">Ingresa tu email y contraseña:</p>
+                <h2 class="login-title">Sign in to my account</h2>
+                <p class="login-subtitle">Enter your email and password:</p>
 
                 <div id="loginMessage"></div>
 
                 <form id="loginFormData">
                     <div class="form-group">
                         <div class="input-icon">
-                            <img src="img/login-imagenes/correo.png" alt="Icono correo">
+                            <img src="/docs/img/login-imagenes/correo.png" alt="Email icon" class="input-icon-img">
                             <input type="email" class="form-input" placeholder="E-mail" id="loginEmail" required />
                         </div>
                     </div>
 
                     <div class="form-group">
                         <div class="input-icon">
-                            <img src="img/login-imagenes/password.png" alt="Icono candado">
-                            <input type="password" class="form-input" placeholder="Contraseña" id="loginPassword" required />
+                            <img src="/docs/img/login-imagenes/password.png" alt="Lock icon" class="input-icon-img">
+                            <input type="password" class="form-input" placeholder="Password" id="loginPassword" required />
                         </div>
                     </div>
 
-                    <button type="submit" class="submit-btn login-btn">INGRESAR</button>
+                    <button type="submit" class="submit-btn login-btn">SIGN IN</button>
                 </form>
 
                 <div class="form-links">
-                    <p>¿Nuevo cliente? <a href="register.html">Crear Cuenta</a></p>
-                    <p>¿Olvidaste tu contraseña? <a href="#" onclick="alert('Funcionalidad en desarrollo')">Recuperar contraseña</a></p>
+                    <p>New customer? <a href="register.html">Create Account</a></p>
+                    <p>Forgot your password? <a href="#" onclick="alert('Feature under development')">Reset password</a></p>
                 </div>
 
                 <div class="divider"></div>
 
                 <div class="social-login">
-                    <button class="social-btn google-btn" onclick="alert('Funcionalidad en desarrollo')">Continuar con Google</button>
-                    <button class="social-btn facebook-btn" onclick="alert('Funcionalidad en desarrollo')">Continuar con Facebook</button>
+                    <button class="social-btn google-btn" onclick="alert('Feature under development')">Continue with Google</button>
+                    <button class="social-btn facebook-btn" onclick="alert('Feature under development')">Continue with Facebook</button>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <!-- Footer -->
     <footer class="footer" role="contentinfo">
@@ -308,7 +288,8 @@
         </div>
     </footer>
 
-    <!-- JavaScript -->
-    <script src="/docs/js/login.js"></script>
+    <!-- Scripts for login only -->
+    <script src="js/database-simulator.js"></script>
+    <script src="js/login.js"></script>
 </body>
 </html>
