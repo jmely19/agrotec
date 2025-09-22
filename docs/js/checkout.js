@@ -81,13 +81,13 @@ function updateOrderSummary() {
     
     const productSavings = originalSubtotal - subtotal; // Savings from product discounts
     const discountAmount = subtotal * (cartData.appliedDiscount || 0); // Additional discount from codes
-    const commission = subtotal > 15 ? 0 : 1.20; // Free commission over B/.15
-    const total = subtotal - discountAmount + commission;
+    const shipping = subtotal > 15 ? 0 : 1.50; // Free shipping over B/.15
+    const total = subtotal - discountAmount + shipping;
 
     // Update summary display
     document.getElementById('checkout-subtotal').textContent = `B/.${subtotal.toFixed(2)}`;
     document.getElementById('checkout-discount').textContent = `-B/.${discountAmount.toFixed(2)}`;
-    document.getElementById('checkout-commission').textContent = commission === 0 ? 'Free' : `B/.${commission.toFixed(2)}`;
+    document.getElementById('checkout-shipping').textContent = shipping === 0 ? 'Free' : `B/.${shipping.toFixed(2)}`;
     document.getElementById('checkout-total').textContent = `B/.${total.toFixed(2)}`;
 
     // Show/hide discount row
@@ -107,9 +107,9 @@ function updateOrderSummary() {
             savingsInfo.style.fontWeight = 'bold';
             
             // Insert before shipping row
-            const commissionRow = document.querySelector('.summary-row:nth-child(3)');
-            if (commissionRow && commissionRow.parentNode) {
-                commissionRow.parentNode.insertBefore(savingsInfo, commissionRow);
+            const shippingRow = document.querySelector('.summary-row:nth-child(3)');
+            if (shippingRow && shippingRow.parentNode) {
+                shippingRow.parentNode.insertBefore(savingsInfo, shippingRow);
             }
         }
         savingsInfo.innerHTML = `<span>Total Savings:</span><span>B/.${productSavings.toFixed(2)}</span>`;
@@ -119,7 +119,7 @@ function updateOrderSummary() {
         subtotal: subtotal.toFixed(2),
         productSavings: productSavings.toFixed(2),
         discountAmount: discountAmount.toFixed(2),
-        commission: commission.toFixed(2),
+        shipping: shipping.toFixed(2),
         total: total.toFixed(2)
     });
 }
@@ -268,8 +268,8 @@ function completeOrder() {
         // Calculate final totals
         const subtotal = cartData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         const discountAmount = subtotal * (cartData.appliedDiscount || 0);
-        const commission = subtotal > 15 ? 0 : 1.20;
-        const total = subtotal - discountAmount + commission;
+        const shipping = subtotal > 15 ? 0 : 1.50;
+        const total = subtotal - discountAmount + shipping;
         
         // Prepare complete order data
         const orderData = {
@@ -279,7 +279,7 @@ function completeOrder() {
                 subtotal: subtotal.toFixed(2),
                 discount: discountAmount.toFixed(2),
                 discountCode: cartData.discountCode || '',
-                commission: commission.toFixed(2),
+                shipping: shipping.toFixed(2),
                 total: total.toFixed(2)
             },
             
@@ -475,9 +475,9 @@ function getOrderTotal() {
     
     const subtotal = cartData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const discountAmount = subtotal * (cartData.appliedDiscount || 0);
-    const commission = subtotal > 15 ? 0 : 1.20;
+    const shipping = subtotal > 15 ? 0 : 1.50;
     
-    return subtotal - discountAmount + commission;
+    return subtotal - discountAmount + shipping;
 }
 
 function getOrderData() {
