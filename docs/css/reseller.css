@@ -1,0 +1,42 @@
+/* File: reseller.css */
+
+/* Badge */
+.badge-reseller {
+  display: inline-block;
+  background: #2b632b;   /* verde */
+  color: white;
+  font-weight: bold;
+  padding: 0.3rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
+}
+
+/* Card accents for resellers */
+.reseller-card {
+  border: 2px solid #2b632b;  /* borde verde */
+  box-shadow: 0 6px 20px rgba(43, 99, 43, 0.15); /* sombra verde suave */
+}
+
+.reseller-card h2 {
+  color: #2b632b;  /* nombre en verde */
+}
+
+/* Warm contact box for resellers */
+.reseller-card .contact-inline {
+  background: #f6fff6;   /* verde muy claro de fondo */
+  border: 1px solid #c8e6c9; /* borde verde claro */
+}
+
+/* Small extra spacing (optional) */
+.reseller-card .profile-info {
+  padding-left: 1rem;
+}
+
+/* Small responsive tweak */
+@media (max-width: 768px) {
+  .reseller-card {
+    padding: 1rem;
+  }
+}
