@@ -1,27 +1,12 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="AGROTEC - Crear cuenta nueva">
-    <meta name="author" content="AGROTEC">
-    
-    <title>AGROTEC - Crear Cuenta</title>
-    <link rel="canonical" href="https://agrotec.com/register">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AGROTEC - Create Account</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/register.css">
+    <link rel="stylesheet" href="css/register.css" />
+    <link rel="stylesheet" href="css/savings.css" />
     
     <style>
         .message {
@@ -56,6 +41,28 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
+        .back-to-login {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-to-login:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+        
         .success-redirect {
             background: #28a745;
             color: white;
@@ -73,7 +80,7 @@
             <div class="container">
                 <!-- Logo -->
                 <div class="navbar__brand">
-                    <a href="index.html" class="navbar__logo" aria-label="AGROTEC Home">
+                    <a href="#" class="navbar__logo" aria-label="AGROTEC Home">
                         <img src="img/logo.png" alt="AGROTEC Logo" class="navbar__logo-img">
                     </a>
                 </div>
@@ -119,8 +126,8 @@
                                         </svg>
                                     </div>
                                     <div class="navbar__dropdown-info">
-                                        <span class="navbar__dropdown-name">Mi Cuenta</span>
-                                        <span class="navbar__dropdown-email">usuario@agrotec.com</span>
+                                        <span class="navbar__dropdown-name">My Account</span>
+                                        <span class="navbar__dropdown-email">user@agrotec.com</span>
                                     </div>
                                 </div>
                             </div>
@@ -133,21 +140,21 @@
                                     </svg>
                                     Login
                                 </a></li>
-                                <li><a href="register.html" class="navbar__dropdown-link navbar__link--active">
+                                <li><a href="register.html" class="navbar__dropdown-link">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                                         <circle cx="9" cy="7" r="4"></circle>
                                         <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
                                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                     </svg>
-                                    Registro
+                                    Register
                                 </a></li>
                                 <li><a href="#" class="navbar__dropdown-link">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
                                         <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
-                                    Configuración
+                                    Settings
                                 </a></li>
                             </ul>
                             <div class="navbar__dropdown-divider"></div>
@@ -158,7 +165,7 @@
                                         <polyline points="16,17 21,12 16,7"></polyline>
                                         <line x1="21" x2="9" y1="12" y2="12"></line>
                                     </svg>
-                                    Cerrar Sesión
+                                    Log Out
                                 </a></li>
                             </ul>
                         </div>
@@ -183,19 +190,20 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
-    <main class="main-container" role="main">
+    <div class="main-container">
         <!-- Image Section -->
-        <div class="image-section" id="imageSection">
-            <img src="img/login-imagenes/fondodeagricultor.avif" alt="Fondo de agricultor" class="background-image" id="farmerBg">
-            <img src="img/login-imagenes/fondodecustomer.jpg" alt="Fondo de customer" class="background-image customer-bg hidden" id="customerBg">
+        <div class="image-section">
+            <!-- Default image (Farmer) -->
+            <img src="img/login-imagenes/fondodeagricultor.avif" alt="Farmer background" class="background-image farmer-bg active">
+            <!-- Customer image -->
+            <img src="img/login-imagenes/fondodecustomer.jpg" alt="Customer background" class="background-image customer-bg">
         </div>
 
         <!-- Form Section -->
         <div class="form-section">
             <!-- REGISTER FORM ONLY -->
             <div id="registerForm">
-                <h2 class="form-title">Crear mi cuenta</h2>
+                <h2 class="form-title">Create my account</h2>
 
                 <div class="user-type-selector">
                     <button type="button" class="user-type-btn" onclick="setUserType('customer')">CUSTOMER</button>
@@ -210,10 +218,10 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <input type="text" class="form-input" placeholder="Nombre" id="name" required />
+                            <input type="text" class="form-input" placeholder="First Name" id="name" required />
                         </div>
                         <div class="form-group">
-                            <input type="text" class="form-input" placeholder="Apellido" id="lastName" required />
+                            <input type="text" class="form-input" placeholder="Last Name" id="lastName" required />
                         </div>
                     </div>
 
@@ -222,46 +230,46 @@
                     </div>
 
                     <div class="form-group">
-                        <input type="password" class="form-input" placeholder="Contraseña" id="password" required />
+                        <input type="password" class="form-input" placeholder="Password" id="password" required />
                     </div>
 
                     <div id="customerFields" class="hidden">
                         <div class="form-group">
-                            <input type="password" class="form-input" placeholder="Confirmar Contraseña" id="confirmPassword" />
+                            <input type="password" class="form-input" placeholder="Confirm Password" id="confirmPassword" />
                         </div>
                         <div class="form-group">
-                            <input type="tel" class="form-input" placeholder="Número de Teléfono" id="phone" />
+                            <input type="tel" class="form-input" placeholder="Phone Number" id="phone" />
                         </div>
                     </div>
 
                     <div id="farmerFields">
                         <div class="form-group">
-                            <input type="text" class="form-input" placeholder="Ubicación" id="location" />
+                            <input type="text" class="form-input" placeholder="Location" id="location" />
                         </div>
                         <div class="form-group">
-                            <input type="tel" class="form-input" placeholder="Teléfono del Negocio" id="farmerPhone" />
+                            <input type="tel" class="form-input" placeholder="Business Phone" id="farmerPhone" />
                         </div>
                         <div class="form-group">
-                            <input type="text" class="form-input" placeholder="Nombre del Negocio" id="businessName" />
+                            <input type="text" class="form-input" placeholder="Business Name" id="businessName" />
                         </div>
                     </div>
 
-                    <button type="submit" class="submit-btn" id="registerBtn">Crear cuenta de farmer</button>
+                    <button type="submit" class="submit-btn" id="registerBtn">Create farmer account</button>
                 </form>
 
                 <div class="form-links">
-                    <p>¿Ya tienes una cuenta? <a href="login.html">Iniciar sesión aquí</a></p>
+                    <p>Already have an account? <a href="login.html">Sign in here</a></p>
                 </div>
 
                 <div class="divider"></div>
 
                 <div class="social-login">
-                    <button class="social-btn google-btn" onclick="alert('Funcionalidad en desarrollo')">Continuar con Google</button>
-                    <button class="social-btn facebook-btn" onclick="alert('Funcionalidad en desarrollo')">Continuar con Facebook</button>
+                    <button class="social-btn google-btn" onclick="alert('Feature under development')">Continue with Google</button>
+                    <button class="social-btn facebook-btn" onclick="alert('Feature under development')">Continue with Facebook</button>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <!-- Footer -->
     <footer class="footer" role="contentinfo">
@@ -321,7 +329,8 @@
         </div>
     </footer>
 
-    <!-- JavaScript -->
+    <!-- Scripts in correct order -->
+    <script src="js/database-simulator.js"></script>
     <script src="js/register.js"></script>
 </body>
 </html>
