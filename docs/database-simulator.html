@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGROTEC - Base de Datos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #28a745;
+            color: #28a745;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .sheet {
+            background: white;
+            border-radius: 0 0 10px 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .sheet.active {
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            min-width: 250px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .excel-table th {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid #1e7e34;
+        }
+
+        .excel-table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            background: #fff;
+            font-size: 13px;
+        }
+
+        .excel-table tr:nth-child(even) td {
+            background: #f8f9fa;
+        }
+
+        .excel-table tr:hover td {
+            background: #e3f2fd;
+            transition: all 0.2s ease;
+        }
+
+        .status-active {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-inactive {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .farmer-type {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+
+        .customer-type {
+            color: #6f42c1;
+            font-weight: bold;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #28a745;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #28a745;
+            display: block;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                min-width: auto;
+                width: 100%;
+            }
+            
+            .excel-table {
+                font-size: 12px;
+            }
+            
+            .excel-table th, 
+            .excel-table td {
+                padding: 8px 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-controls">
+                <a href="/docs/login.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver al Login
+                </a>
+                <button class="refresh-btn" onclick="loadDatabaseData()">
+                    <i class="fas fa-sync-alt"></i>
+                    Actualizar Datos
+                </button>
+            </div>
+            
+            <h1>🌱 AGROTEC - Base de Datos</h1>
+            <p>Sistema completo de gestión de usuarios registrados</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showSheet('usuarios')">📋 USUARIOS</button>
+            <button class="tab" onclick="showSheet('farmers')">🌾 FARMERS</button>
+            <button class="tab" onclick="showSheet('customers')">🛒 CUSTOMERS</button>
+            <button class="tab" onclick="showSheet('dashboard')">📊 DASHBOARD</button>
+        </div>
+
+        <!-- HOJA USUARIOS -->
+        <div id="usuarios" class="sheet active">
+            <div class="controls">
+                <input type="text" class="search-box" placeholder="🔍 Buscar por nombre, email o ID..." onkeyup="searchUsers(this.value)">
+                <button class="btn btn-warning" onclick="exportData('users')">📤 Exportar CSV</button>
+            </div>
+
+            <table class="excel-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tipo Usuario</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Fecha Registro</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <p>Cargando usuarios...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- HOJA FARMERS -->
+        <div id="farmers" class="sheet">
+            <div class="controls">
+                <input type="text" class="search-box" placeholder="🔍 Buscar farmers..." onkeyup="searchFarmers(this.value)">
+                <button class="btn btn-warning" onclick="exportData('farmers')">📤 Exportar CSV</button>
+            </div>
+            
+            <table class="excel-table" id="farmersTable">
+                <thead>
+                    <tr>
+                        <th>ID Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Ubicación</th>
+                        <th>Nombre Negocio</th>
+                        <th>Teléfono Negocio</th>
+                        <th>Fecha Registro</th>
+                    </tr>
+                </thead>
+                <tbody id="farmersTableBody">
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-tractor"></i>
+                            <p>Cargando farmers...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- HOJA CUSTOMERS -->
+        <div id="customers" class="sheet">
+            <div class="controls">
+                <input type="text" class="search-box" placeholder="🔍 Buscar customers..." onkeyup="searchCustomers(this.value)">
+                <button class="btn btn-warning" onclick="exportData('customers')">📤 Exportar CSV</button>
+            </div>
+            
+            <table class="excel-table" id="customersTable">
+                <thead>
+                    <tr>
+                        <th>ID Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Teléfono Contacto</th>
+                        <th>Fecha Registro</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="customersTableBody">
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <i class="fas fa-shopping-cart"></i>
+                            <p>Cargando customers...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- HOJA DASHBOARD -->
+        <div id="dashboard" class="sheet">
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalUsers">0</span>
+                    <span class="stat-label">Total Usuarios</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalFarmers">0</span>
+                    <span class="stat-label">Farmers</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalCustomers">0</span>
+                    <span class="stat-label">Customers</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="activeUsers">0</span>
+                    <span class="stat-label">Usuarios Activos</span>
+                </div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 5px solid #007bff;">
+                <h3>📊 Información del Sistema</h3>
+                <p><strong>Última actualización:</strong> <span id="lastUpdate">Nunca</span></p>
+                <p><strong>Total registros:</strong> <span id="totalRecords">0</span></p>
+                <p><strong>Base de datos:</strong> LocalStorage (Simulada)</p>
+                <p><strong>Estado del sistema:</strong> <span style="color: #28a745; font-weight: bold;">✅ Operativo</span></p>
+            </div>
+        </div>
+
+        <div class="last-updated" id="footerUpdate">
+            Los datos se actualizan automáticamente cuando se registran nuevos usuarios
+        </div>
+    </div>
+
+    <script src="/docs/js/database-simulator.js"></script>
+</body>
+</html>
