@@ -1,0 +1,350 @@
+/* ===== ESTILOS BASE ===== */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+/* ===== HEADER ===== */
+.header {
+  background-color: #2b632b;
+  color: white;
+  padding: 1rem 0;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* ===== ESPACIADO PRINCIPAL ===== */
+.profile-section {
+  margin-top: 100px; /* 👈 espacio entre header y perfil */
+  margin-bottom: 80px; /* 👈 espacio antes del footer */
+}
+
+/* ===== CONTENEDOR ===== */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* ===== PERFIL ===== */
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.profile-image img {
+  width: 250px;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.profile-info h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: #2b632b;
+}
+
+.profile-info .location {
+  font-style: italic;
+  margin-bottom: 1rem;
+  color: #555;
+}
+
+.profile-info .description {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ===== CONTACTO DENTRO DEL CUADRO ===== */
+.contact-inline {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f4f8f4;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.contact-inline h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #2b632b;
+}
+
+.contact-inline p {
+  margin: 0.2rem 0;
+}
+
+.contact-inline a {
+  color: #2b632b;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.contact-inline a:hover {
+  text-decoration: underline;
+}
+
+/* ===== SECCIÓN DE PRODUCTOS ===== */
+.products-section {
+  margin-top: 80px !important;
+  margin-bottom: 80px !important;
+  text-align: center;
+}
+
+.products-section h3 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #2b632b;
+  position: relative;
+}
+
+.products-section h3::after {
+  content: "";
+  display: block;
+  width: 80px;
+  height: 3px;
+  background-color: #2b632b;
+  margin: 0.5rem auto 0;
+  border-radius: 2px;
+}
+
+/* ===== GRID DE PRODUCTOS ===== */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 3rem;
+  justify-items: center;
+  align-items: stretch;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ===== TARJETAS DE PRODUCTO ===== */
+.product-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 280px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  padding-bottom: 1rem;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.product-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+/* ===== INFO DEL PRODUCTO ===== */
+.product-info {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.product-info .tag {
+  display: none !important; /* 👈 ocultamos las etiquetas verde agua */
+}
+
+.product-info h4 {
+  font-size: 1.2rem;
+  margin: 0.5rem 0;
+  font-weight: bold;
+}
+
+.product-info .price {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #e53935;
+  margin: 0.5rem 0 1rem;
+}
+
+/* ===== BOTÓN ===== */
+.add-btn {
+  background: linear-gradient(135deg, #2b632b, #41a85f);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.4rem;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.add-btn:hover {
+  background: linear-gradient(135deg, #41a85f, #2b632b);
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== BOTÓN VOLVER ===== */
+.back-container {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.back-btn {
+  display: inline-block;
+  background-color: #2b632b;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background-color: #41a85f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* ===== FOOTER MEJORADO ===== */
+/* ===== FOOTER AJUSTADO ===== */
+.footer {
+  background-color: #ffffff; /* 👈 vuelve a ser blanco */
+  padding: 3rem 0; /* 👈 más alto para que no se vea apiñado */
+  color: #333;
+  box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.03); /* sombra MUY sutil */
+}
+
+.footer__top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2.5rem; /* 👈 más espacio entre columnas */
+  margin-bottom: 2rem;
+}
+
+.footer__brand {
+  flex: 1 1 250px;
+}
+
+.footer__logo {
+  width: 150px;
+  margin-bottom: 0.5rem;
+}
+
+.footer__tagline {
+  font-style: italic;
+  color: #555;
+}
+
+.footer__copyright p {
+  margin: 0.2rem 0;
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.footer__columns {
+  display: flex;
+  gap: 3rem; /* 👈 separación mayor entre secciones */
+  flex: 2 1 400px;
+}
+
+.footer__column-title {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0.8rem;
+  color: #2b632b;
+}
+
+.footer__link {
+  display: block;
+  color: #333;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.footer__link:hover {
+  text-decoration: underline;
+}
+
+.footer__bottom {
+  border-top: 1px solid #ddd;
+  padding-top: 1.2rem;
+  text-align: center;
+}
+
+.footer__social-title {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #2b632b;
+}
+
+.footer__social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+}
+
+.footer__social-icon {
+  width: 26px;
+  height: 26px;
+  filter: grayscale(20%);
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.footer__social-icon:hover {
+  transform: scale(1.15);
+  filter: grayscale(0%);
+}
+
+/* ===== Responsive ajustes para footer ===== */
+@media (max-width: 768px) {
+  .footer__columns {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+
+  .footer__brand {
+    text-align: center;
+  }
+}
+
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .profile-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-image img {
+    width: 180px;
+    height: 180px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* 👈 en móvil se ven más ordenadas */
+    gap: 2rem;
+  }
+}
