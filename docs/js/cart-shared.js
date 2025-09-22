@@ -1,18 +1,17 @@
-// js/cart-shared.js - Shared cart system between pages
+// js/cart-shared.js - Sistema de carrito compartido actualizado para sincronización completa
 
 // ========================================
-// SHARED CART - UNIFIED SYSTEM
+// SHARED CART - SISTEMA UNIFICADO ACTUALIZADO
 // ========================================
 
-// Global cart state
 window.SharedCart = {
     items: [],
     appliedDiscount: 0,
     discountCode: '',
     
-    // Unified product database
-    allProducts: {
-        // Regular products (from products.html)
+    // Productos base del sistema
+    baseProducts: {
+        // Productos regulares
         1: { id: 1, name: "Romaine lettuce National 1LB", price: 1.50, originalPrice: null, image: "img/products/Romaine_lettuce.jpg", type: "regular" },
         2: { id: 2, name: "Tomato cherry 1LB", price: 0.65, originalPrice: null, image: "img/products/tomate.png", type: "regular" },
         3: { id: 3, name: "Broccoli 1lb (Medium bouquet)", price: 1.98, originalPrice: null, image: "img/products/brocoli.jpg", type: "regular" },
@@ -24,8 +23,7 @@ window.SharedCart = {
         9: { id: 9, name: "Purple cabbage", price: 0.98, originalPrice: null, image: "img/products/repollomorado.jpg", type: "regular" },
         10: { id: 10, name: "Garlic", price: 1.98, originalPrice: null, image: "img/products/ajo.jpg", type: "regular" },
         
-        // Discounted products (from savings.html)
-        // Using IDs 100+ to avoid conflicts
+        // Ofertas base
         101: { id: 101, name: "Tomato cherry 1LB", price: 0.47, originalPrice: 0.65, image: "img/savings/tomate.png", type: "savings", savings: "28%" },
         102: { id: 102, name: "Purple Cabbage", price: 0.85, originalPrice: 0.98, image: "img/savings/repollomorado.png", type: "savings", savings: "13%" },
         103: { id: 103, name: "Green Cabbage 1LB", price: 1.13, originalPrice: 1.78, image: "img/savings/green_cabbage.png", type: "savings", savings: "37%" },
@@ -36,31 +34,121 @@ window.SharedCart = {
         108: { id: 108, name: "Pineapple", price: 0.76, originalPrice: 1.03, image: "img/savings/pineapple.png", type: "savings", savings: "26%" }
     },
     
-    // Unified discount codes
+    // Productos combinados (base + farmer)
+    allProducts: {},
+    
+    // Códigos de descuento
     discountCodes: {
-        // Codes for regular products
         "WELCOME10": 0.10,
         "FRESH15": 0.15,
         "HEALTHY20": 0.20,
-        
-        // Codes for discounted products (additional)
         "SAVE10": 0.10,
         "BIGSAVE": 0.15,
         "SUPER20": 0.20,
         "MEGA25": 0.25,
-        "ULTRA30": 0.30
+        "ULTRA30": 0.30,
+        "FARMER10": 0.10,
+        "HARVEST15": 0.15
     },
     
     // ========================================
-    // SHARED CART METHODS
+    // INICIALIZACIÓN Y CARGA DE PRODUCTOS
     // ========================================
     
     init() {
+        console.log('SharedCart initializing with complete farmer integration...');
+        this.loadFarmerProducts();
         this.loadFromStorage();
         this.updateUI();
         this.bindEvents();
-        console.log('Shared cart initialized');
+        this.startPeriodicSync();
+        console.log('SharedCart initialized with', Object.keys(this.allProducts).length, 'total products');
     },
+    
+    loadFarmerProducts() {
+        // Empezar con productos base
+        this.allProducts = { ...this.baseProducts };
+        
+        try {
+            // Cargar desde el storage global sincronizado
+            const farmerProducts = JSON.parse(localStorage.getItem('farmer_products') || '[]');
+            
+            let addedProducts = 0;
+            
+            farmerProducts.forEach(product => {
+                if (product.status === 'active' && product.onlineStore) {
+                    const productData = {
+                        id: product.id,
+                        name: product.title,
+                        price: product.price,
+                        originalPrice: product.originalPrice,
+                        image: product.image || 'img/products/placeholder.png',
+                        type: product.isOffer ? 'savings' : 'regular',
+                        farmer: product.farmerName,
+                        businessName: product.businessName || product.farmerName || 'Local Farm',
+                        weight: product.weight ? `${product.weight.value} ${product.weight.unit}` : '',
+                        description: product.description,
+                        dateAdded: product.dateCreated,
+                        isFarmerProduct: true,
+                        farmerId: product.farmerId
+                    };
+                    
+                    // Calcular porcentaje de ahorro para ofertas
+                    if (product.isOffer && product.originalPrice && product.originalPrice > product.price) {
+                        const savingsPercent = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+                        productData.savings = `${savingsPercent}%`;
+                    }
+                    
+                    this.allProducts[product.id] = productData;
+                    addedProducts++;
+                }
+            });
+            
+            console.log(`Loaded ${addedProducts} active farmer products into SharedCart`);
+            
+        } catch (error) {
+            console.error('Error loading farmer products:', error);
+        }
+        
+        this.triggerProductUpdate();
+    },
+    
+    startPeriodicSync() {
+        // Verificar actualizaciones cada 5 segundos
+        setInterval(() => {
+            this.loadFarmerProducts();
+        }, 5000);
+        
+        // Escuchar eventos de sincronización
+        window.addEventListener('farmerProductsGlobalSync', (e) => {
+            console.log('SharedCart: Global sync event received, reloading farmer products...');
+            this.loadFarmerProducts();
+        });
+        
+        // Escuchar cambios en localStorage
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'farmer_products') {
+                console.log('SharedCart: Farmer products updated, resyncing...');
+                this.loadFarmerProducts();
+            }
+        });
+    },
+    
+    triggerProductUpdate() {
+        const event = new CustomEvent('productsUpdated', {
+            detail: {
+                totalProducts: Object.keys(this.allProducts).length,
+                timestamp: Date.now()
+            }
+        });
+        window.dispatchEvent(event);
+        
+        localStorage.setItem('products_last_update', Date.now().toString());
+    },
+    
+    // ========================================
+    // MÉTODOS DEL CARRITO
+    // ========================================
     
     addItem(productId) {
         const product = this.allProducts[productId];
@@ -69,7 +157,6 @@ window.SharedCart = {
             return false;
         }
         
-        // Check if item already exists in cart
         const existingItem = this.items.find(item => item.id === productId);
         
         if (existingItem) {
@@ -83,7 +170,11 @@ window.SharedCart = {
                 image: product.image,
                 quantity: 1,
                 type: product.type,
-                savings: product.savings || null
+                savings: product.savings || null,
+                farmer: product.farmer || null,
+                businessName: product.businessName || null,
+                weight: product.weight || null,
+                isFarmerProduct: product.isFarmerProduct || false
             });
         }
         
@@ -160,7 +251,7 @@ window.SharedCart = {
         
         const savingsFromProducts = originalSubtotal - subtotal;
         const discountAmount = subtotal * this.appliedDiscount;
-        const shipping = subtotal > 15 ? 0 : 5.00;
+        const shipping = subtotal > 15 ? 0 : 1.50;
         const total = subtotal - discountAmount + shipping;
         const totalItemCount = this.items.reduce((sum, item) => sum + item.quantity, 0);
         
@@ -178,7 +269,7 @@ window.SharedCart = {
     },
     
     // ========================================
-    // PERSISTENCE AND UI
+    // PERSISTENCIA Y ALMACENAMIENTO
     // ========================================
     
     saveToStorage() {
@@ -200,7 +291,7 @@ window.SharedCart = {
             const saved = localStorage.getItem('agrotec_shared_cart');
             if (saved) {
                 const cartData = JSON.parse(saved);
-                // Load only if not too old (24 hours)
+                // Cargar solo si no es muy antiguo (24 horas)
                 if (Date.now() - cartData.timestamp < 86400000) {
                     this.items = cartData.items || [];
                     this.appliedDiscount = cartData.appliedDiscount || 0;
@@ -211,6 +302,10 @@ window.SharedCart = {
             console.warn('Could not load cart:', error);
         }
     },
+    
+    // ========================================
+    // ACTUALIZACIÓN DE INTERFAZ
+    // ========================================
     
     updateUI() {
         this.updateCartBadge();
@@ -242,6 +337,7 @@ window.SharedCart = {
                 `B/.${item.price.toFixed(2)}`;
                 
             const savingsBadge = item.savings ? `<span style="color: #28a745; font-size: 0.8em;">(${item.savings} off)</span>` : '';
+            const businessBadge = item.isFarmerProduct ? `<span style="color: #6f4f28; font-size: 0.8em;">🌱 ${item.businessName || item.farmer}</span>` : '';
                 
             return `
                 <div class="cart-item">
@@ -251,6 +347,8 @@ window.SharedCart = {
                     <div class="cart-item-info">
                         <div class="cart-item-name">${item.name} ${savingsBadge}</div>
                         <div class="cart-item-price">${priceDisplay}</div>
+                        ${item.weight ? `<div class="cart-item-weight">${item.weight}</div>` : ''}
+                        ${businessBadge}
                         <div class="cart-item-controls">
                             <button class="qty-btn" onclick="SharedCart.changeQuantity(${item.id}, -1)">-</button>
                             <span class="cart-item-quantity">${item.quantity}</span>
@@ -283,7 +381,7 @@ window.SharedCart = {
             elements.discountRow.style.display = summary.hasDiscount ? 'flex' : 'none';
         }
         
-        // Show total savings if any
+        // Mostrar ahorros totales si los hay
         if (summary.hasSavings) {
             let savingsRow = document.getElementById('savingsRow');
             if (!savingsRow && elements.discountRow) {
@@ -299,15 +397,18 @@ window.SharedCart = {
             }
         }
         
-        // Enable/disable checkout button
+        // Habilitar/deshabilitar botón de checkout
         const checkoutBtn = document.querySelector('.checkout-btn');
         if (checkoutBtn) {
             checkoutBtn.disabled = this.items.length === 0;
         }
     },
     
+    // ========================================
+    // EVENTOS Y MODAL
+    // ========================================
+    
     bindEvents() {
-        // Event listeners for cart modal
         const cartToggle = document.getElementById('cartToggle');
         const cartModal = document.getElementById('cartModal');
         const cartClose = document.getElementById('cartClose');
@@ -326,7 +427,7 @@ window.SharedCart = {
             });
         }
         
-        // Keyboard shortcuts
+        // Atajos de teclado
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.closeModal();
         });
@@ -348,7 +449,7 @@ window.SharedCart = {
         if (cartModal) {
             cartModal.classList.add('active');
             document.body.style.overflow = 'hidden';
-            this.updateUI(); // Refresh UI on open
+            this.updateUI();
         }
     },
     
@@ -360,14 +461,16 @@ window.SharedCart = {
         }
     },
     
-    // UPDATED PROCEEDTOCHECKOUT FUNCTION
+    // ========================================
+    // CHECKOUT
+    // ========================================
+    
     proceedToCheckout() {
         if (this.items.length === 0) {
             this.showNotification('Your cart is empty', 'error');
             return;
         }
         
-        // Prepare cart data for checkout
         const checkoutData = {
             items: this.items.map(item => ({
                 id: item.id,
@@ -377,26 +480,25 @@ window.SharedCart = {
                 quantity: item.quantity,
                 type: item.type,
                 savings: item.savings,
-                image: item.image
+                image: item.image,
+                farmer: item.farmer,
+                businessName: item.businessName,
+                weight: item.weight,
+                isFarmerProduct: item.isFarmerProduct
             })),
             appliedDiscount: this.appliedDiscount,
             discountCode: this.discountCode,
+            summary: this.getCartSummary(),
             timestamp: Date.now()
         };
         
         try {
-            // Save cart data for checkout
             localStorage.setItem('checkoutCart', JSON.stringify(checkoutData));
-            
             console.log('Cart data saved for checkout:', checkoutData);
             
-            // Show redirect notification
             this.showNotification('Redirecting to checkout...', 'success');
-            
-            // Close cart modal
             this.closeModal();
             
-            // Redirect to checkout after brief delay
             setTimeout(() => {
                 window.location.href = 'checkout.html';
             }, 500);
@@ -408,36 +510,30 @@ window.SharedCart = {
     },
     
     // ========================================
-    // ADDITIONAL UTILITIES
+    // UTILIDADES ADICIONALES
     // ========================================
     
-    // Get product information by ID
     getProduct(productId) {
         return this.allProducts[productId] || null;
     },
     
-    // Check if product is in cart
     hasProduct(productId) {
         return this.items.some(item => item.id === productId);
     },
     
-    // Get quantity of specific product in cart
     getProductQuantity(productId) {
         const item = this.items.find(item => item.id === productId);
         return item ? item.quantity : 0;
     },
     
-    // Get total unique products in cart
     getUniqueProductCount() {
         return this.items.length;
     },
     
-    // Get total individual items in cart
     getTotalItemCount() {
         return this.items.reduce((sum, item) => sum + item.quantity, 0);
     },
     
-    // Clear only products of specific type (regular or savings)
     clearProductType(type) {
         const originalLength = this.items.length;
         this.items = this.items.filter(item => item.type !== type);
@@ -449,14 +545,16 @@ window.SharedCart = {
         }
     },
     
-    // Get cart statistics
     getCartStats() {
         const summary = this.getCartSummary();
+        const farmerProducts = this.items.filter(item => item.isFarmerProduct);
+        
         return {
             uniqueProducts: this.getUniqueProductCount(),
             totalItems: this.getTotalItemCount(),
             regularProducts: this.items.filter(item => item.type === 'regular').length,
             savingsProducts: this.items.filter(item => item.type === 'savings').length,
+            farmerProducts: farmerProducts.length,
             subtotal: parseFloat(summary.subtotal),
             totalSavings: parseFloat(summary.savingsFromProducts),
             discount: parseFloat(summary.discountAmount),
@@ -468,24 +566,42 @@ window.SharedCart = {
         };
     },
     
-    // Debug function for development
+    refreshFarmerProducts() {
+        console.log('Manually refreshing farmer products...');
+        this.loadFarmerProducts();
+        this.showNotification('Products refreshed!', 'success');
+    },
+    
     debug() {
         console.group('SharedCart Debug Info');
-        console.log('Items:', this.items);
+        console.log('Base Products:', Object.keys(this.baseProducts).length);
+        console.log('All Products (including farmer):', Object.keys(this.allProducts).length);
+        console.log('Cart Items:', this.items);
         console.log('Applied Discount:', this.appliedDiscount);
         console.log('Discount Code:', this.discountCode);
         console.log('Cart Summary:', this.getCartSummary());
         console.log('Cart Stats:', this.getCartStats());
+        
+        const farmerProducts = Object.values(this.allProducts).filter(p => p.isFarmerProduct);
+        console.log('Farmer Products Loaded:', farmerProducts.length);
+        console.log('Farmer Products:', farmerProducts.map(p => ({ 
+            id: p.id, 
+            name: p.name, 
+            type: p.type, 
+            businessName: p.businessName,
+            farmer: p.farmer 
+        })));
+        
         console.groupEnd();
         return this.getCartStats();
     },
     
     // ========================================
-    // NOTIFICATION SYSTEM
+    // SISTEMA DE NOTIFICACIONES
     // ========================================
     
     showNotification(message, type = 'info', duration = 3000) {
-        // Remove existing notifications
+        // Remover notificaciones existentes
         const existing = document.querySelectorAll('.shared-cart-notification');
         existing.forEach(notification => notification.remove());
         
@@ -493,7 +609,7 @@ window.SharedCart = {
         notification.className = `shared-cart-notification ${type}`;
         notification.textContent = message;
         
-        // Add close button
+        // Agregar botón de cerrar
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = '&times;';
         closeBtn.className = 'notification-close';
@@ -502,10 +618,10 @@ window.SharedCart = {
         
         document.body.appendChild(notification);
         
-        // Show with animation
+        // Mostrar con animación
         setTimeout(() => notification.classList.add('show'), 100);
         
-        // Auto-remove after specified time
+        // Auto-remover después del tiempo especificado
         const timeout = setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => {
@@ -515,7 +631,7 @@ window.SharedCart = {
             }, 300);
         }, duration);
         
-        // Cancel timeout if closed manually
+        // Cancelar timeout si se cierra manualmente
         closeBtn.onclick = () => {
             clearTimeout(timeout);
             notification.classList.remove('show');
@@ -525,10 +641,9 @@ window.SharedCart = {
 };
 
 // ========================================
-// GLOBAL FUNCTIONS
+// FUNCIONES GLOBALES
 // ========================================
 
-// Functions to be called from HTML
 window.addToSharedCart = function(productId) {
     return SharedCart.addItem(productId);
 };
@@ -545,7 +660,6 @@ window.proceedToSharedCheckout = function() {
     SharedCart.proceedToCheckout();
 };
 
-// Additional utility functions
 window.debugSharedCart = function() {
     return SharedCart.debug();
 };
@@ -554,14 +668,21 @@ window.clearSharedCart = function() {
     SharedCart.clearCart();
 };
 
-// Auto-initialization
+window.refreshFarmerProducts = function() {
+    SharedCart.refreshFarmerProducts();
+};
+
+// ========================================
+// AUTO-INICIALIZACIÓN
+// ========================================
+
 document.addEventListener('DOMContentLoaded', function() {
     SharedCart.init();
-    console.log('SharedCart initialized. Use debugSharedCart() for debug information.');
+    console.log('SharedCart initialized with complete farmer integration. Use debugSharedCart() for debug information.');
 });
 
 // ========================================
-// IMPROVED CSS STYLES
+// ESTILOS CSS MEJORADOS
 // ========================================
 
 const style = document.createElement('style');
@@ -628,7 +749,12 @@ style.textContent = `
         transform: scale(1.1);
     }
     
-    /* Additional animations for cart */
+    .cart-item-weight {
+        font-size: 0.8rem;
+        color: #666;
+        font-style: italic;
+    }
+    
     .cart-item {
         animation: fadeInItem 0.3s ease;
     }
@@ -654,7 +780,6 @@ style.textContent = `
         100% { transform: scale(1); }
     }
     
-    /* Improved styles for cart buttons */
     .qty-btn:hover {
         background: #2b632b;
         color: white;
@@ -681,10 +806,9 @@ style.textContent = `
 document.head.appendChild(style);
 
 // ========================================
-// GLOBAL ERROR HANDLING
+// MANEJO GLOBAL DE ERRORES
 // ========================================
 
-// Handle localStorage errors
 window.addEventListener('storage', function(e) {
     if (e.key === 'agrotec_shared_cart') {
         SharedCart.loadFromStorage();
@@ -692,9 +816,19 @@ window.addEventListener('storage', function(e) {
     }
 });
 
-// Initialization log
-console.log('%c🛒 SharedCart System Loaded', 'color: #28a745; font-weight: bold; font-size: 14px;');
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        console.log('SharedCart farmer integration check:');
+        console.log('- Farmer products in allProducts:', Object.values(SharedCart.allProducts).filter(p => p.isFarmerProduct).length);
+        console.log('- Total products available:', Object.keys(SharedCart.allProducts).length);
+        
+        SharedCart.loadFarmerProducts();
+    }, 2000);
+});
+
+console.log('🛒 SharedCart System Loaded with Complete Farmer Integration');
 console.log('Available commands:');
 console.log('- debugSharedCart(): Show cart debug info');
 console.log('- clearSharedCart(): Clear entire cart');
+console.log('- refreshFarmerProducts(): Force refresh farmer products');
 console.log('- SharedCart.getCartStats(): Get cart statistics');
