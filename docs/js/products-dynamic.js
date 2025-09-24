@@ -1,8 +1,4 @@
-// js/products-dynamic.js - Dynamic loading for Products page with business name support
-
-// ========================================
-// DYNAMIC PRODUCTS SYSTEM WITH BUSINESS NAME
-// ========================================
+// js/products-dynamic.js - Dynamic loading for Products page with business name & Firebase support
 
 window.ProductsManager = {
     originalProducts: {
@@ -17,60 +13,70 @@ window.ProductsManager = {
         9: { id: 9, name: "Purple cabbage", price: 0.98, originalPrice: null, image: "img/products/repollomorado.jpg", type: "regular", tag: "Francisco's Market" },
         10: { id: 10, name: "Garlic", price: 1.98, originalPrice: null, image: "img/products/ajo.jpg", type: "regular", tag: "Francisco's Market" }
     },
-    
+
     allProducts: {},
     filteredProducts: {},
     currentSort: 'default',
     currentSearch: '',
     currentCategory: 'all',
     isLoading: false,
-    
-    init() {
+
+    async init() {
         console.log('🛒 Initializing Products Manager...');
-        this.loadAllProducts();
+        // Espera a que Firebase esté listo antes de cargar productos
+        if (window.FirebaseManager) {
+            await window.FirebaseManager.init();
+        }
+        // Espera hasta que FarmerProductsFirebase esté listo y escucha en tiempo real
+        if (window.FarmerProductsFirebase) {
+            window.FarmerProductsFirebase.setupRealtimeListener();
+        }
+        await this.loadAllProducts();
         this.bindEvents();
         this.loadProducts();
         console.log('✅ Products Manager ready!');
     },
-    
+
     // ========================================
-    // PRODUCT LOADING WITH BUSINESS NAME SUPPORT
+    // PRODUCT LOADING WITH BUSINESS NAME & FIREBASE SUPPORT
     // ========================================
-    
-    loadAllProducts() {
-        // Combine original products with farmer products
+
+    async loadAllProducts() {
+        // Combina productos locales con los productos de Firebase
         this.allProducts = { ...this.originalProducts };
-        
-        // Load farmer products if available
+
         try {
-            const farmerProducts = JSON.parse(localStorage.getItem('farmer_products') || '[]');
+            let farmerProducts = [];
+            // Intenta cargar productos desde Firebase
+            if (window.FarmerProductsFirebase) {
+                farmerProducts = await window.FarmerProductsFirebase.getActiveProducts();
+            } else {
+                // Si no hay acceso a Firebase, usa backup local
+                farmerProducts = JSON.parse(localStorage.getItem('farmer_products_firebase_backup') || '[]');
+            }
             farmerProducts.forEach(product => {
-                if (product.type === 'regular' && product.status === 'active' && product.onlineStore) {
-                    this.allProducts[product.id] = {
-                        id: product.id,
-                        name: product.title,
-                        price: product.price,
-                        originalPrice: product.originalPrice,
-                        image: product.image,
-                        type: 'regular',
-                        // CRITICAL UPDATE: Use businessName without "BY" prefix
-                        tag: `${(product.businessName || product.farmerName || 'LOCAL FARM').toUpperCase()}`,
-                        farmer: product.farmerName,
-                        businessName: product.businessName,
-                        weight: product.weight ? `${product.weight.value} ${product.weight.unit}` : '',
-                        description: product.description,
-                        dateAdded: product.dateCreated,
-                        isFarmerProduct: true
-                    };
-                }
+                this.allProducts[product.id] = {
+                    id: product.id,
+                    name: product.title,
+                    price: product.price,
+                    originalPrice: product.originalPrice,
+                    image: product.image,
+                    type: 'regular',
+                    tag: `${(product.businessName || product.farmerName || 'LOCAL FARM').toUpperCase()}`,
+                    farmer: product.farmerName,
+                    businessName: product.businessName,
+                    weight: product.weight ? `${product.weight.value} ${product.weight.unit}` : '',
+                    description: product.description,
+                    dateAdded: product.dateCreated,
+                    isFarmerProduct: true
+                };
             });
-            
-            console.log(`📦 Loaded ${farmerProducts.length} farmer products`);
+            console.log(`📦 Loaded ${farmerProducts.length} farmer products (${window.FarmerProductsFirebase ? 'Firebase' : 'Local Backup'})`);
         } catch (error) {
             console.error('Error loading farmer products:', error);
         }
-        
-        // Sync with SharedCart if available
+
+        // Sincroniza con SharedCart si existe
         if (window.SharedCart) {
             Object.keys(this.allProducts).forEach(id => {
                 if (!window.SharedCart.allProducts[id]) {
@@ -79,11 +85,11 @@ window.ProductsManager = {
             });
         }
     },
-    
+
     loadProducts() {
         this.showLoading(true);
-        
-        // Simulate loading delay for better UX
+
+        // Simula un delay de carga para mejor UX
         setTimeout(() => {
             this.applyFilters();
             this.renderProducts();
@@ -91,11 +97,11 @@ window.ProductsManager = {
             this.showLoading(false);
         }, 800);
     },
-    
+
     applyFilters() {
         let products = { ...this.allProducts };
-        
-        // Apply search filter
+
+        // Filtro de búsqueda
         if (this.currentSearch) {
             const searchLower = this.currentSearch.toLowerCase();
             products = Object.fromEntries(
@@ -107,8 +113,8 @@ window.ProductsManager = {
                 )
             );
         }
-        
-        // Apply category filter
+
+        // Filtro de categoría
         if (this.currentCategory !== 'all') {
             products = Object.fromEntries(
                 Object.entries(products).filter(([id, product]) => {
@@ -123,8 +129,8 @@ window.ProductsManager = {
                 })
             );
         }
-        
-        // Apply sorting
+
+        // Ordenamiento
         const productArray = Object.values(products);
         productArray.sort((a, b) => {
             switch (this.currentSort) {
@@ -142,44 +148,44 @@ window.ProductsManager = {
                     return 0;
             }
         });
-        
+
         this.filteredProducts = productArray.reduce((acc, product) => {
             acc[product.id] = product;
             return acc;
         }, {});
     },
-    
+
     // ========================================
     // RENDERING WITH BUSINESS NAME
     // ========================================
-    
+
     renderProducts() {
         const grid = document.getElementById('productsGrid');
         const noResults = document.getElementById('noResultsMessage');
-        
+
         if (!grid) return;
-        
+
         const products = Object.values(this.filteredProducts);
-        
+
         if (products.length === 0) {
             grid.innerHTML = '';
             if (noResults) noResults.style.display = 'block';
             return;
         }
-        
+
         if (noResults) noResults.style.display = 'none';
-        
+
         grid.innerHTML = products.map(product => this.renderProductCard(product)).join('');
-        
+
         // Attach event listeners
         this.attachProductEvents();
     },
-    
+
     renderProductCard(product) {
-        // Show "NEW" badge for recent farmer products
+        // Muestra el badge "NEW" para productos recientes de farmer
         const isNew = product.isFarmerProduct && this.isRecentProduct(product.dateAdded);
         const newBadge = isNew ? '<span class="new-badge">NEW</span>' : '';
-        
+
         return `
             <div class="product-card ${product.isFarmerProduct ? 'farmer-product' : ''}" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}">
                 <div class="product-image">
@@ -198,9 +204,9 @@ window.ProductsManager = {
             </div>
         `;
     },
-    
+
     attachProductEvents() {
-        // Product card hover effects
+        // Efectos hover en las tarjetas
         document.querySelectorAll('.product-card').forEach(card => {
             card.addEventListener('mouseenter', function() {
                 this.style.transform = 'translateY(-8px) scale(1.02)';
@@ -212,22 +218,18 @@ window.ProductsManager = {
             });
         });
     },
-    
-    // ========================================
-    // EVENT HANDLING
-    // ========================================
-    
+
     bindEvents() {
-        // Search functionality
+        // Search
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.getElementById('searchBtn');
-        
+
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 this.currentSearch = e.target.value.trim();
                 this.debounceSearch();
             });
-            
+
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -235,16 +237,16 @@ window.ProductsManager = {
                 }
             });
         }
-        
+
         if (searchBtn) {
             searchBtn.addEventListener('click', () => this.loadProducts());
         }
-        
+
         // View toggle
         const gridBtn = document.getElementById('gridViewBtn');
         const listBtn = document.getElementById('listViewBtn');
         const productsGrid = document.getElementById('productsGrid');
-        
+
         if (gridBtn) {
             gridBtn.addEventListener('click', () => {
                 gridBtn.classList.add('active');
@@ -253,7 +255,7 @@ window.ProductsManager = {
                 this.showNotification('Grid view activated', 'info');
             });
         }
-        
+
         if (listBtn) {
             listBtn.addEventListener('click', () => {
                 listBtn.classList.add('active');
@@ -262,7 +264,7 @@ window.ProductsManager = {
                 this.showNotification('List view activated', 'info');
             });
         }
-        
+
         // Sorting
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) {
@@ -271,8 +273,8 @@ window.ProductsManager = {
                 this.loadProducts();
             });
         }
-        
-        // Category filtering
+
+        // Category filter
         const categoryFilter = document.getElementById('categoryFilter');
         if (categoryFilter) {
             categoryFilter.addEventListener('change', (e) => {
@@ -280,62 +282,39 @@ window.ProductsManager = {
                 this.loadProducts();
             });
         }
-        
-        // Storage event listener for farmer products
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'farmer_products') {
-                console.log('Farmer products updated, reloading...');
-                this.loadAllProducts();
-                this.loadProducts();
-            }
-        });
-        
-        // Listen for new products from farmer dashboard
-        window.addEventListener('newProductAdded', (e) => {
-            console.log('New product added:', e.detail);
+
+        // Escuchar eventos de Firebase
+        window.addEventListener('firebaseProductsUpdated', (e) => {
+            console.log('Firebase products updated, reloading...');
             this.loadAllProducts();
             this.loadProducts();
-            this.showNotification(`New product added: ${e.detail.title}`, 'success');
+            this.showNotification(`Products updated: ${e.detail.count} in store`, 'success');
         });
-        
-        // Listen for farmer products specifically
-        window.addEventListener('farmerProductAdded', (e) => {
-            console.log('Farmer product added:', e.detail);
+        window.addEventListener('firebaseProductAdded', (e) => {
             this.loadAllProducts();
             this.loadProducts();
-            this.showNotification(`New farmer product: ${e.detail.title}`, 'success');
         });
-        
-        // Listen for products update trigger
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'products_update_trigger') {
-                setTimeout(() => {
-                    this.loadAllProducts();
-                    this.loadProducts();
-                }, 200);
-            }
-        });
-        
-        // Listen for business name updates
-        window.addEventListener('farmerProductsUpdated', (e) => {
-            console.log('Farmer products updated with business names');
+        window.addEventListener('firebaseProductUpdated', (e) => {
             this.loadAllProducts();
             this.loadProducts();
-            this.showNotification(`${e.detail.updatedCount} products updated with business names`, 'success');
+        });
+        window.addEventListener('firebaseProductDeleted', (e) => {
+            this.loadAllProducts();
+            this.loadProducts();
         });
     },
-    
+
     debounceSearch() {
         clearTimeout(this.searchTimeout);
         this.searchTimeout = setTimeout(() => {
             this.loadProducts();
         }, 500);
     },
-    
+
     // ========================================
     // CART INTEGRATION
     // ========================================
-    
+
     addToCart(productId) {
         if (window.SharedCart) {
             const success = window.SharedCart.addItem(productId);
@@ -346,18 +325,18 @@ window.ProductsManager = {
             this.showNotification('Cart system not available', 'error');
         }
     },
-    
+
     animateAddButton(productId) {
         const card = document.querySelector(`[data-id="${productId}"]`);
         const button = card?.querySelector('.add-to-cart-btn');
-        
+
         if (button) {
             const originalText = button.textContent;
             button.style.transform = 'scale(0.95)';
             button.textContent = '✓ Added!';
             button.style.background = '#28a745';
             button.disabled = true;
-            
+
             setTimeout(() => {
                 button.style.transform = 'scale(1)';
                 button.textContent = originalText;
@@ -366,58 +345,58 @@ window.ProductsManager = {
             }, 1500);
         }
     },
-    
+
     // ========================================
     // STATISTICS WITH BUSINESS NAME SUPPORT
     // ========================================
-    
+
     updateStats() {
         const products = Object.values(this.filteredProducts);
         const farmerProducts = products.filter(p => p.isFarmerProduct);
         const totalPrice = products.reduce((sum, p) => sum + p.price, 0);
         const averagePrice = products.length > 0 ? totalPrice / products.length : 0;
-        
-        // Count unique businesses
+
+        // Unique businesses
         const uniqueBusinesses = new Set();
         farmerProducts.forEach(p => {
             if (p.businessName) {
                 uniqueBusinesses.add(p.businessName);
             }
         });
-        
+
         // Update stat elements
         const totalCount = document.getElementById('totalProductsCount');
         const farmerCount = document.getElementById('farmerProductsCount');
         const avgPrice = document.getElementById('averagePrice');
         const businessCount = document.getElementById('uniqueBusinessesCount');
-        
+
         if (totalCount) totalCount.textContent = products.length;
         if (farmerCount) farmerCount.textContent = farmerProducts.length;
         if (avgPrice) avgPrice.textContent = `B/.${averagePrice.toFixed(2)}`;
         if (businessCount) businessCount.textContent = uniqueBusinesses.size;
-        
+
         console.log(`📊 Stats: ${products.length} total, ${farmerProducts.length} from farmers, ${uniqueBusinesses.size} businesses`);
     },
-    
+
     // ========================================
     // UTILITIES
     // ========================================
-    
+
     showLoading(show) {
         const loadingSection = document.getElementById('loadingSection');
         const productsSection = document.querySelector('.products-section');
-        
+
         if (loadingSection) {
             loadingSection.style.display = show ? 'block' : 'none';
         }
-        
+
         if (productsSection) {
             productsSection.style.opacity = show ? '0.5' : '1';
         }
-        
+
         this.isLoading = show;
     },
-    
+
     showNotification(message, type = 'info') {
         if (window.SharedCart && window.SharedCart.showNotification) {
             window.SharedCart.showNotification(message, type);
@@ -425,45 +404,45 @@ window.ProductsManager = {
             console.log(`${type.toUpperCase()}: ${message}`);
         }
     },
-    
+
     isRecentProduct(dateString) {
         const productDate = new Date(dateString);
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         return productDate > weekAgo;
     },
-    
+
     // ========================================
     // PUBLIC API
     // ========================================
-    
+
     refreshProducts() {
         this.loadAllProducts();
         this.loadProducts();
         this.showNotification('Products refreshed', 'success');
     },
-    
+
     searchProducts(term) {
         this.currentSearch = term;
         const searchInput = document.getElementById('searchInput');
         if (searchInput) searchInput.value = term;
         this.loadProducts();
     },
-    
+
     filterByCategory(category) {
         this.currentCategory = category;
         const categoryFilter = document.getElementById('categoryFilter');
         if (categoryFilter) categoryFilter.value = category;
         this.loadProducts();
     },
-    
+
     sortBy(sortType) {
         this.currentSort = sortType;
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) sortSelect.value = sortType;
         this.loadProducts();
     },
-    
+
     debug() {
         console.group('🛒 Products Manager Debug');
         console.log('All Products:', Object.keys(this.allProducts).length);
@@ -472,16 +451,16 @@ window.ProductsManager = {
         console.log('Current Sort:', this.currentSort);
         console.log('Current Category:', this.currentCategory);
         console.log('Is Loading:', this.isLoading);
-        
+
         const farmerProducts = Object.values(this.allProducts).filter(p => p.isFarmerProduct);
         const withBusinessName = farmerProducts.filter(p => p.businessName);
-        
+
         console.log('Farmer Products:', farmerProducts.length);
         console.log('With Business Names:', withBusinessName.length);
         console.log('Business Names:', withBusinessName.map(p => p.businessName));
-        
+
         console.groupEnd();
-        
+
         return {
             totalProducts: Object.keys(this.allProducts).length,
             filteredProducts: Object.keys(this.filteredProducts).length,
@@ -504,15 +483,15 @@ window.clearAllFilters = function() {
     ProductsManager.currentSearch = '';
     ProductsManager.currentSort = 'default';
     ProductsManager.currentCategory = 'all';
-    
+
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
     const categoryFilter = document.getElementById('categoryFilter');
-    
+
     if (searchInput) searchInput.value = '';
     if (sortSelect) sortSelect.value = 'default';
     if (categoryFilter) categoryFilter.value = 'all';
-    
+
     ProductsManager.loadProducts();
     ProductsManager.showNotification('All filters cleared', 'info');
 };
@@ -520,7 +499,7 @@ window.clearAllFilters = function() {
 window.toggleFavorite = function(button) {
     const card = button.closest('.product-card');
     const productName = card?.querySelector('.product-name')?.textContent || 'Product';
-    
+
     if (button.textContent === '♡') {
         button.textContent = '♥';
         button.style.color = '#ff4757';
@@ -532,7 +511,7 @@ window.toggleFavorite = function(button) {
         button.style.transform = 'scale(1)';
         ProductsManager.showNotification(`${productName} removed from favorites`, 'info');
     }
-    
+
     setTimeout(() => {
         button.style.transform = 'scale(1)';
     }, 200);
@@ -546,7 +525,7 @@ window.ProductsManager = ProductsManager;
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait for SharedCart to be available
+    // Espera a que SharedCart y Firebase estén listos
     setTimeout(() => {
         ProductsManager.init();
     }, 300);
