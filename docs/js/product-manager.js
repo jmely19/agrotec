@@ -1,18 +1,37 @@
-// js/product-manager.js - Sistema para agregar productos que se sincroniza con SharedCart
+// js/product-manager-firebase.js - Sistema para agregar productos con Firebase
 
 // ========================================
-// PRODUCT MANAGER - SISTEMA PARA AGREGAR PRODUCTOS
+// PRODUCT MANAGER - SISTEMA CON FIREBASE INTEGRATION
 // ========================================
 
 window.ProductManager = {
-    nextProductId: 1000, // Empezamos con IDs altos para evitar conflictos
+    nextProductId: 1000,
     
     init() {
         console.log('ProductManager initializing...');
         this.loadNextId();
         this.bindFormEvents();
         this.updateProductsList();
+        this.setupFirebaseListeners();
         console.log('ProductManager initialized');
+    },
+    
+    // ========================================
+    // FIREBASE INTEGRATION
+    // ========================================
+    
+    setupFirebaseListeners() {
+        // Listen for Firebase product updates
+        window.addEventListener('firebaseProductsUpdated', (e) => {
+            console.log('Firebase products updated, refreshing local list');
+            this.updateProductsList();
+        });
+        
+        // Listen for Firebase save confirmations
+        window.addEventListener('firebaseProductSaved', (e) => {
+            console.log('Product saved to Firebase:', e.detail);
+            this.showNotification('Product saved to cloud storage', 'success');
+        });
     },
     
     // ========================================
@@ -20,19 +39,16 @@ window.ProductManager = {
     // ========================================
     
     bindFormEvents() {
-        // Botón GUARDAR
         const saveBtn = document.getElementById('guardarProducto') || 
                        document.querySelector('[onclick*="guardar"]') ||
                        document.querySelector('.btn-guardar');
                        
         if (saveBtn) {
-            // Remover eventos anteriores
             saveBtn.removeAttribute('onclick');
             saveBtn.addEventListener('click', (e) => this.handleSaveProduct(e));
             console.log('Save button connected');
         }
         
-        // Botón CANCELAR
         const cancelBtn = document.getElementById('cancelarProducto') || 
                          document.querySelector('[onclick*="cancelar"]') ||
                          document.querySelector('.btn-cancelar');
@@ -42,7 +58,6 @@ window.ProductManager = {
             cancelBtn.addEventListener('click', (e) => this.handleCancelForm(e));
         }
         
-        // Subir imagen
         const uploadBtn = document.getElementById('subirImagen') ||
                          document.querySelector('.upload-btn');
                          
@@ -50,10 +65,7 @@ window.ProductManager = {
             uploadBtn.addEventListener('click', (e) => this.handleImageUpload(e));
         }
         
-        // Validación en tiempo real
         this.bindValidationEvents();
-        
-        // Checkbox para ofertas/savings
         this.bindSavingsCheckbox();
     },
     
@@ -76,7 +88,6 @@ window.ProductManager = {
     },
     
     bindSavingsCheckbox() {
-        // Crear checkbox para ofertas si no existe
         this.createSavingsCheckbox();
     },
     
@@ -101,7 +112,6 @@ window.ProductManager = {
             
             priceSection.parentNode.insertBefore(checkboxContainer, priceSection.nextSibling);
             
-            // Event listener para el checkbox
             document.getElementById('esOferta').addEventListener('change', (e) => {
                 const originalPriceContainer = document.getElementById('originalPriceContainer');
                 if (e.target.checked) {
@@ -115,15 +125,14 @@ window.ProductManager = {
     },
     
     // ========================================
-    // SAVE PRODUCT FUNCTIONALITY
+    // SAVE PRODUCT WITH FIREBASE
     // ========================================
     
-    handleSaveProduct(e) {
+    async handleSaveProduct(e) {
         e.preventDefault();
         
         console.log('Saving product...');
         
-        // Recopilar datos del formulario
         const productData = this.collectFormData();
         
         if (!productData) {
@@ -131,28 +140,85 @@ window.ProductManager = {
             return;
         }
         
-        // Validar datos
         const validation = this.validateProductData(productData);
         if (!validation.isValid) {
             this.showNotification(validation.message, 'error');
             return;
         }
         
-        // Crear el producto
-        const success = this.createProduct(productData);
+        // Show loading state
+        const saveBtn = e.target;
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
         
-        if (success) {
-            this.showNotification('Producto guardado exitosamente!', 'success');
-            this.clearForm();
-            this.updateProductsList();
-        } else {
+        try {
+            const success = await this.createProduct(productData);
+            
+            if (success) {
+                this.showNotification('Producto guardado exitosamente!', 'success');
+                this.clearForm();
+                this.updateProductsList();
+                
+                // Try to save to Firebase if available
+                if (window.FarmerProductsFirebase && window.currentFarmer) {
+                    await this.saveToFirebase(productData);
+                }
+            } else {
+                this.showNotification('Error al guardar el producto', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving product:', error);
             this.showNotification('Error al guardar el producto', 'error');
+        } finally {
+            // Restore button state
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }
+    },
+    
+    async saveToFirebase(productData) {
+        try {
+            const farmerData = window.currentFarmer || JSON.parse(sessionStorage.getItem('agrotec_user') || '{}');
+            
+            if (!farmerData.email) {
+                console.warn('No farmer data available for Firebase sync');
+                return false;
+            }
+            
+            // Convert to farmer product format
+            const farmerProductData = {
+                id: productData.id,
+                title: productData.name,
+                description: productData.description,
+                price: productData.price,
+                originalPrice: productData.originalPrice,
+                weight: { value: 1, unit: productData.weight || 'kg' },
+                image: productData.image,
+                type: productData.type,
+                isOffer: productData.isOffer,
+                status: 'active',
+                onlineStore: true,
+                category: 'vegetables',
+                dateCreated: productData.dateAdded
+            };
+            
+            const success = await window.FarmerProductsFirebase.saveProduct(farmerData, farmerProductData);
+            
+            if (success) {
+                this.showNotification('Product synced to cloud', 'success');
+            }
+            
+            return success;
+            
+        } catch (error) {
+            console.error('Error saving to Firebase:', error);
+            return false;
         }
     },
     
     collectFormData() {
         try {
-            // Buscar inputs de diferentes maneras
             const titleInput = document.getElementById('productoTitulo') ||
                               document.querySelector('input[placeholder*="libra"]') ||
                               document.querySelector('input[name="titulo"]') ||
@@ -222,9 +288,9 @@ window.ProductManager = {
         return { isValid: true, message: 'Válido' };
     },
     
-    createProduct(productData) {
+    async createProduct(productData) {
         try {
-            // Agregar al sistema SharedCart
+            // Add to SharedCart system
             if (window.SharedCart) {
                 window.SharedCart.allProducts[productData.id] = {
                     id: productData.id,
@@ -237,16 +303,17 @@ window.ProductManager = {
                     weight: productData.weight,
                     dateAdded: productData.dateAdded,
                     savings: productData.isOffer && productData.originalPrice ? 
-                             Math.round(((productData.originalPrice - productData.price) / productData.originalPrice) * 100) + '%' : null
+                             Math.round(((productData.originalPrice - productData.price) / productData.originalPrice) * 100) + '%' : null,
+                    isCustomProduct: true
                 };
                 
                 console.log('Product added to SharedCart system');
             }
             
-            // Guardar en localStorage
+            // Save to localStorage
             this.saveToLocalStorage(productData);
             
-            // Actualizar páginas si están abiertas
+            // Notify other pages
             this.notifyOtherPages(productData);
             
             return true;
@@ -259,30 +326,21 @@ window.ProductManager = {
     
     saveToLocalStorage(productData) {
         try {
-            // Obtener productos existentes
             let savedProducts = JSON.parse(localStorage.getItem('custom_products') || '[]');
-            
-            // Agregar nuevo producto
             savedProducts.push(productData);
-            
-            // Guardar
             localStorage.setItem('custom_products', JSON.stringify(savedProducts));
-            
             console.log('Product saved to localStorage');
-            
         } catch (error) {
             console.error('Error saving to localStorage:', error);
         }
     },
     
     notifyOtherPages(productData) {
-        // Disparar evento para otras páginas abiertas
         const event = new CustomEvent('newProductAdded', {
             detail: productData
         });
         window.dispatchEvent(event);
         
-        // También actualizar el storage event
         localStorage.setItem('product_update_trigger', Date.now().toString());
     },
     
@@ -297,31 +355,26 @@ window.ProductManager = {
     },
     
     clearForm() {
-        // Limpiar todos los inputs
         const inputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea, input[type="file"]');
         inputs.forEach(input => {
             input.value = '';
         });
         
-        // Limpiar checkboxes
         const checkboxes = document.querySelectorAll('input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
             checkbox.checked = false;
         });
         
-        // Resetear selects
         const selects = document.querySelectorAll('select');
         selects.forEach(select => {
             select.selectedIndex = 0;
         });
         
-        // Ocultar precio original
         const originalPriceContainer = document.getElementById('originalPriceContainer');
         if (originalPriceContainer) {
             originalPriceContainer.style.display = 'none';
         }
         
-        // Reset imagen
         this.selectedImage = null;
         this.updateImagePreview(null);
         
@@ -362,12 +415,10 @@ window.ProductManager = {
     },
     
     updateImagePreview(imageSrc) {
-        // Buscar el área de preview
         let preview = document.querySelector('.image-preview') || 
                      document.querySelector('.product-image-preview');
                      
         if (!preview) {
-            // Crear preview si no existe
             const uploadSection = document.querySelector('.upload-section') ||
                                 document.querySelector('[class*="multimedia"]') ||
                                 document.querySelector('button[class*="subir"]')?.closest('div');
@@ -405,8 +456,6 @@ window.ProductManager = {
     
     validateTitle(input) {
         const value = input.value.trim();
-        const feedback = input.nextElementSibling?.classList.contains('validation-feedback') ? 
-                        input.nextElementSibling : null;
         
         if (value.length < 3) {
             this.showFieldError(input, 'El título debe tener al menos 3 caracteres');
@@ -473,7 +522,7 @@ window.ProductManager = {
     },
     
     // ========================================
-    // PRODUCTS LIST MANAGEMENT
+    // PRODUCTS LIST WITH FIREBASE DATA
     // ========================================
     
     updateProductsList() {
@@ -484,26 +533,31 @@ window.ProductManager = {
         if (!listContainer) return;
         
         try {
-            const products = JSON.parse(localStorage.getItem('custom_products') || '[]');
+            // Get products from local storage and Firebase
+            const customProducts = JSON.parse(localStorage.getItem('custom_products') || '[]');
+            const firebaseProducts = this.getFirebaseProducts();
             
-            if (products.length === 0) {
+            const allProducts = [...customProducts, ...firebaseProducts];
+            
+            if (allProducts.length === 0) {
                 listContainer.innerHTML = '<p style="color: #999; text-align: center;">No hay productos agregados</p>';
                 return;
             }
             
-            listContainer.innerHTML = products.map(product => `
-                <div class="product-item" data-id="${product.id}">
+            listContainer.innerHTML = allProducts.map(product => `
+                <div class="product-item ${product.isFirebaseProduct ? 'firebase-product' : ''}" data-id="${product.id}">
                     <div class="product-item-image">
-                        <img src="${product.image}" alt="${product.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
+                        <img src="${product.image || product.img}" alt="${product.name || product.title}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px;">
                     </div>
                     <div class="product-item-info">
-                        <h4>${product.name}</h4>
-                        <p>B/.${product.price.toFixed(2)} ${product.originalPrice ? `<small>(antes B/.${product.originalPrice.toFixed(2)})</small>` : ''}</p>
+                        <h4>${product.name || product.title}</h4>
+                        <p>B/.${(product.price || 0).toFixed(2)} ${product.originalPrice ? `<small>(antes B/.${product.originalPrice.toFixed(2)})</small>` : ''}</p>
                         <span class="product-type ${product.type}">${product.type === 'savings' ? 'OFERTAS' : 'PRODUCTOS'}</span>
+                        ${product.isFirebaseProduct ? '<span class="firebase-badge">☁️ Cloud</span>' : '<span class="local-badge">💾 Local</span>'}
                     </div>
                     <div class="product-item-actions">
                         <button onclick="ProductManager.editProduct(${product.id})" class="btn-edit">Editar</button>
-                        <button onclick="ProductManager.deleteProduct(${product.id})" class="btn-delete">Eliminar</button>
+                        <button onclick="ProductManager.deleteProduct(${product.id}, ${product.isFirebaseProduct})" class="btn-delete">Eliminar</button>
                     </div>
                 </div>
             `).join('');
@@ -513,16 +567,40 @@ window.ProductManager = {
         }
     },
     
-    deleteProduct(productId) {
+    getFirebaseProducts() {
+        try {
+            if (!window.FarmerProductsFirebase) return [];
+            
+            const farmerProducts = JSON.parse(localStorage.getItem('farmer_products') || '[]');
+            return farmerProducts
+                .filter(p => p.status === 'active')
+                .map(p => ({
+                    ...p,
+                    name: p.title,
+                    img: p.image,
+                    isFirebaseProduct: true
+                }));
+        } catch (error) {
+            console.error('Error getting Firebase products:', error);
+            return [];
+        }
+    },
+    
+    async deleteProduct(productId, isFirebaseProduct = false) {
         if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) return;
         
         try {
-            // Remover de custom products
-            let products = JSON.parse(localStorage.getItem('custom_products') || '[]');
-            products = products.filter(p => p.id !== productId);
-            localStorage.setItem('custom_products', JSON.stringify(products));
+            if (isFirebaseProduct && window.FarmerProductsFirebase) {
+                // Delete from Firebase
+                await window.FarmerProductsFirebase.deleteProduct(productId);
+            } else {
+                // Delete from local storage
+                let products = JSON.parse(localStorage.getItem('custom_products') || '[]');
+                products = products.filter(p => p.id !== productId);
+                localStorage.setItem('custom_products', JSON.stringify(products));
+            }
             
-            // Remover de SharedCart
+            // Remove from SharedCart
             if (window.SharedCart && window.SharedCart.allProducts[productId]) {
                 delete window.SharedCart.allProducts[productId];
             }
@@ -537,13 +615,15 @@ window.ProductManager = {
     },
     
     editProduct(productId) {
-        // Por ahora mostrar información, después se puede implementar edición completa
         try {
-            const products = JSON.parse(localStorage.getItem('custom_products') || '[]');
-            const product = products.find(p => p.id === productId);
+            const customProducts = JSON.parse(localStorage.getItem('custom_products') || '[]');
+            const firebaseProducts = this.getFirebaseProducts();
+            const allProducts = [...customProducts, ...firebaseProducts];
+            
+            const product = allProducts.find(p => p.id === productId);
             
             if (product) {
-                alert(`Editando producto: ${product.name}\nPrecio: B/.${product.price}\nTipo: ${product.type}\n\n(Función de edición en desarrollo)`);
+                alert(`Editando producto: ${product.name || product.title}\nPrecio: B/.${product.price}\nTipo: ${product.type}\n\n(Función de edición en desarrollo)`);
             }
             
         } catch (error) {
@@ -556,13 +636,11 @@ window.ProductManager = {
     // ========================================
     
     showNotification(message, type = 'info') {
-        // Usar SharedCart notification si está disponible
         if (window.SharedCart && window.SharedCart.showNotification) {
             window.SharedCart.showNotification(message, type);
             return;
         }
         
-        // Fallback notification
         const notification = document.createElement('div');
         notification.className = `product-manager-notification ${type}`;
         notification.textContent = message;
@@ -578,16 +656,16 @@ window.ProductManager = {
     },
     
     // ========================================
-    // SYNC WITH SHARED CART
+    // SYNC WITH SHARED CART AND FIREBASE
     // ========================================
     
     syncWithSharedCart() {
         if (!window.SharedCart) return;
         
         try {
-            const products = JSON.parse(localStorage.getItem('custom_products') || '[]');
-            
-            products.forEach(product => {
+            // Sync custom products
+            const customProducts = JSON.parse(localStorage.getItem('custom_products') || '[]');
+            customProducts.forEach(product => {
                 if (!window.SharedCart.allProducts[product.id]) {
                     window.SharedCart.allProducts[product.id] = {
                         id: product.id,
@@ -596,7 +674,25 @@ window.ProductManager = {
                         originalPrice: product.originalPrice,
                         image: product.image,
                         type: product.type,
-                        savings: product.savings || null
+                        savings: product.savings || null,
+                        isCustomProduct: true
+                    };
+                }
+            });
+            
+            // Sync Firebase products
+            const firebaseProducts = this.getFirebaseProducts();
+            firebaseProducts.forEach(product => {
+                if (!window.SharedCart.allProducts[product.id]) {
+                    window.SharedCart.allProducts[product.id] = {
+                        id: product.id,
+                        name: product.name || product.title,
+                        price: product.price,
+                        originalPrice: product.originalPrice,
+                        image: product.image || product.img,
+                        type: product.type,
+                        savings: product.savings || null,
+                        isFirebaseProduct: true
                     };
                 }
             });
@@ -617,38 +713,45 @@ window.ProductManager = {
         console.log('Next Product ID:', this.nextProductId);
         console.log('Selected Image:', this.selectedImage);
         
-        const products = JSON.parse(localStorage.getItem('custom_products') || '[]');
-        console.log('Saved Products:', products.length);
-        console.log('Products List:', products);
+        const customProducts = JSON.parse(localStorage.getItem('custom_products') || '[]');
+        const firebaseProducts = this.getFirebaseProducts();
+        
+        console.log('Custom Products:', customProducts.length);
+        console.log('Firebase Products:', firebaseProducts.length);
+        console.log('Total Products:', customProducts.length + firebaseProducts.length);
         
         if (window.SharedCart) {
-            const customProducts = Object.keys(window.SharedCart.allProducts)
-                .filter(id => parseInt(id) >= 1000)
+            const customInCart = Object.keys(window.SharedCart.allProducts)
+                .filter(id => window.SharedCart.allProducts[id].isCustomProduct)
                 .length;
-            console.log('Custom products in SharedCart:', customProducts);
+            const firebaseInCart = Object.keys(window.SharedCart.allProducts)
+                .filter(id => window.SharedCart.allProducts[id].isFirebaseProduct)
+                .length;
+            console.log('Custom products in SharedCart:', customInCart);
+            console.log('Firebase products in SharedCart:', firebaseInCart);
         }
         
+        console.log('Firebase Integration:', !!window.FarmerProductsFirebase);
         console.groupEnd();
         
         return {
             nextId: this.nextProductId,
-            savedProducts: products.length,
-            sharedCartIntegration: !!window.SharedCart
+            customProducts: customProducts.length,
+            firebaseProducts: firebaseProducts.length,
+            sharedCartIntegration: !!window.SharedCart,
+            firebaseIntegration: !!window.FarmerProductsFirebase
         };
     }
 };
 
 // ========================================
-// AUTO-INITIALIZATION AND EVENT LISTENERS
+// AUTO-INITIALIZATION
 // ========================================
 
-// Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait a bit to ensure SharedCart is loaded
     setTimeout(() => {
         ProductManager.init();
         
-        // Sync with SharedCart if available
         if (window.SharedCart) {
             ProductManager.syncWithSharedCart();
         }
@@ -657,7 +760,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 200);
 });
 
-// Listen for SharedCart initialization
 window.addEventListener('load', function() {
     setTimeout(() => {
         if (window.SharedCart && ProductManager) {
@@ -679,7 +781,7 @@ window.cancelarProducto = function() {
 };
 
 // ========================================
-// STYLES FOR PRODUCT MANAGER
+// ENHANCED STYLES
 // ========================================
 
 const styles = document.createElement('style');
@@ -758,6 +860,10 @@ styles.textContent = `
         background: white;
     }
     
+    .product-item.firebase-product {
+        border-left: 4px solid #4285f4;
+    }
+    
     .product-item-info {
         flex: 1;
     }
@@ -778,6 +884,7 @@ styles.textContent = `
         font-size: 0.7rem;
         font-weight: bold;
         text-transform: uppercase;
+        margin-right: 8px;
     }
     
     .product-type.regular {
@@ -788,6 +895,24 @@ styles.textContent = `
     .product-type.savings {
         background: #fff3cd;
         color: #856404;
+    }
+    
+    .firebase-badge, .local-badge {
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.6rem;
+        font-weight: bold;
+        margin-left: 8px;
+    }
+    
+    .firebase-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .local-badge {
+        background: #f3e5f5;
+        color: #7b1fa2;
     }
     
     .product-item-actions {
@@ -854,5 +979,4 @@ styles.textContent = `
 
 document.head.appendChild(styles);
 
-console.log('🛠️ ProductManager system loaded and ready!');
-console.log('Commands: ProductManager.debug(), ProductManager.syncWithSharedCart()');
+console.log('ProductManager system with Firebase integration loaded and ready!');
