@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AGROTEC - Base de Datos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -82,6 +87,32 @@
         .refresh-btn:hover {
             background: #1e7e34;
             transform: translateY(-2px);
+        }
+
+        /* Indicador de estado de conexión */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status.online {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+
+        .connection-status.offline {
+            background: linear-gradient(45deg, #ffc107, #fd7e14);
+        }
+
+        .connection-status i {
+            margin-right: 5px;
         }
 
         .tabs {
@@ -179,6 +210,34 @@
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Botón de sincronización */
+        .sync-btn {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sync-btn.syncing {
+            cursor: not-allowed;
+        }
+
+        .sync-btn.syncing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         .excel-table {
@@ -289,6 +348,49 @@
             border-radius: 5px;
         }
 
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 2px solid #28a745;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Alert messages */
+        .alert {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.8rem;
@@ -311,10 +413,25 @@
             .excel-table td {
                 padding: 8px 5px;
             }
+
+            .connection-status {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin-bottom: 10px;
+                display: block;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Indicador de conexión -->
+    <div class="connection-status" id="connectionStatus">
+        <i class="fas fa-cloud"></i>
+        <span>Conectando...</span>
+    </div>
+
     <div class="container">
         <div class="header">
             <div class="header-controls">
@@ -322,14 +439,26 @@
                     <i class="fas fa-arrow-left"></i>
                     Volver al Login
                 </a>
-                <button class="refresh-btn" onclick="loadDatabaseData()">
-                    <i class="fas fa-sync-alt"></i>
-                    Actualizar Datos
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="refresh-btn" onclick="loadDatabaseData()">
+                        <i class="fas fa-sync-alt"></i>
+                        Actualizar Datos
+                    </button>
+                    <button class="btn sync-btn" id="syncBtn" onclick="manualSync()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        Sincronizar
+                    </button>
+                </div>
             </div>
             
             <h1>🌱 AGROTEC - Base de Datos</h1>
             <p>Sistema completo de gestión de usuarios registrados</p>
+            
+            <!-- Alert para mostrar el estado de la base de datos -->
+            <div id="databaseAlert" class="alert alert-info" style="display: none;">
+                <i class="fas fa-info-circle"></i>
+                <span id="databaseAlertText">Cargando información de la base de datos...</span>
+            </div>
         </div>
 
         <div class="tabs">
@@ -357,11 +486,13 @@
                         <th>Teléfono</th>
                         <th>Fecha Registro</th>
                         <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
                     <tr>
-                        <td colspan="8" class="empty-state">
+                        <td colspan="9" class="empty-state">
+                            <div class="loading-spinner"></div>
                             <i class="fas fa-users"></i>
                             <p>Cargando usuarios...</p>
                         </td>
@@ -386,11 +517,13 @@
                         <th>Nombre Negocio</th>
                         <th>Teléfono Negocio</th>
                         <th>Fecha Registro</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="farmersTableBody">
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="7" class="empty-state">
+                            <div class="loading-spinner"></div>
                             <i class="fas fa-tractor"></i>
                             <p>Cargando farmers...</p>
                         </td>
@@ -415,11 +548,13 @@
                         <th>Teléfono Contacto</th>
                         <th>Fecha Registro</th>
                         <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="customersTableBody">
                     <tr>
-                        <td colspan="6" class="empty-state">
+                        <td colspan="7" class="empty-state">
+                            <div class="loading-spinner"></div>
                             <i class="fas fa-shopping-cart"></i>
                             <p>Cargando customers...</p>
                         </td>
@@ -453,8 +588,36 @@
                 <h3>📊 Información del Sistema</h3>
                 <p><strong>Última actualización:</strong> <span id="lastUpdate">Nunca</span></p>
                 <p><strong>Total registros:</strong> <span id="totalRecords">0</span></p>
-                <p><strong>Base de datos:</strong> LocalStorage (Simulada)</p>
-                <p><strong>Estado del sistema:</strong> <span style="color: #28a745; font-weight: bold;">✅ Operativo</span></p>
+                <p><strong>Base de datos:</strong> <span id="databaseType">Detectando...</span></p>
+                <p><strong>Estado del sistema:</strong> <span id="systemStatus" style="color: #ffc107; font-weight: bold;">⏳ Inicializando...</span></p>
+                <p><strong>Sincronización:</strong> <span id="syncStatus">Preparando...</span></p>
+            </div>
+
+            <!-- Información adicional sobre Firebase -->
+            <div id="firebaseInfo" style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #007bff; display: none;">
+                <h4>🔥 Firebase Cloud Database</h4>
+                <p><strong>Estado de conexión:</strong> <span id="firebaseConnectionStatus">Desconectado</span></p>
+                <p><strong>Última sincronización:</strong> <span id="lastSyncTime">Nunca</span></p>
+                <p><strong>Modo offline:</strong> <span id="offlineMode">No disponible</span></p>
+                <div style="margin-top: 10px;">
+                    <small><i class="fas fa-info-circle"></i> Los datos se sincronizan automáticamente cuando hay conexión a internet.</small>
+                </div>
+            </div>
+
+            <!-- Botones de administración -->
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="databaseDebug.showData()">
+                    <i class="fas fa-database"></i> Ver Datos Debug
+                </button>
+                <button class="btn btn-success" onclick="databaseDebug.checkIntegrity()">
+                    <i class="fas fa-check-circle"></i> Verificar Integridad
+                </button>
+                <button class="btn btn-warning" onclick="databaseDebug.getStats()">
+                    <i class="fas fa-chart-bar"></i> Estadísticas
+                </button>
+                <button class="btn" style="background: #6f42c1; color: white;" onclick="databaseDebug.cleanData()">
+                    <i class="fas fa-broom"></i> Limpiar Datos
+                </button>
             </div>
         </div>
 
@@ -463,7 +626,134 @@
         </div>
     </div>
 
+    <script>
+        // Función para actualizar el indicador de conexión
+        function updateConnectionStatus(isOnline, message) {
+            const status = document.getElementById('connectionStatus');
+            const icon = status.querySelector('i');
+            const text = status.querySelector('span');
+            
+            if (isOnline) {
+                status.className = 'connection-status online';
+                icon.className = 'fas fa-cloud-upload-alt';
+                text.textContent = message || 'En línea (Firebase)';
+            } else {
+                status.className = 'connection-status offline';
+                icon.className = 'fas fa-cloud-download-alt';
+                text.textContent = message || 'Modo local (localStorage)';
+            }
+        }
+
+        // Función para sincronización manual
+        async function manualSync() {
+            const syncBtn = document.getElementById('syncBtn');
+            const originalText = syncBtn.innerHTML;
+            
+            syncBtn.classList.add('syncing');
+            syncBtn.innerHTML = '<div class="loading-spinner"></div> Sincronizando...';
+            syncBtn.disabled = true;
+            
+            try {
+                await loadDatabaseData();
+                showSuccess('Sincronización completada');
+            } catch (error) {
+                showError('Error en la sincronización: ' + error.message);
+            } finally {
+                syncBtn.classList.remove('syncing');
+                syncBtn.innerHTML = originalText;
+                syncBtn.disabled = false;
+            }
+        }
+
+        // Actualizar información del sistema cuando se carga
+        function updateSystemInfo() {
+            const databaseTypeEl = document.getElementById('databaseType');
+            const systemStatusEl = document.getElementById('systemStatus');
+            const syncStatusEl = document.getElementById('syncStatus');
+            const firebaseInfoEl = document.getElementById('firebaseInfo');
+            const firebaseConnectionEl = document.getElementById('firebaseConnectionStatus');
+            const lastSyncEl = document.getElementById('lastSyncTime');
+            const offlineModeEl = document.getElementById('offlineMode');
+            
+            if (typeof isFirebaseEnabled !== 'undefined') {
+                if (isFirebaseEnabled) {
+                    databaseTypeEl.textContent = 'Firebase Cloud Database + localStorage (backup)';
+                    systemStatusEl.innerHTML = '<i class="fas fa-check-circle"></i> ✅ Operativo (En línea)';
+                    syncStatusEl.textContent = 'Automática cada 10 segundos';
+                    firebaseInfoEl.style.display = 'block';
+                    firebaseConnectionEl.textContent = 'Conectado';
+                    lastSyncEl.textContent = new Date().toLocaleString('es-ES');
+                    offlineModeEl.textContent = 'Disponible';
+                    updateConnectionStatus(true);
+                } else {
+                    databaseTypeEl.textContent = 'localStorage (Solo local)';
+                    systemStatusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ Modo Local';
+                    syncStatusEl.textContent = 'Solo local - Sin sincronización en la nube';
+                    firebaseInfoEl.style.display = 'none';
+                    updateConnectionStatus(false);
+                }
+            } else {
+                databaseTypeEl.textContent = 'Inicializando...';
+                systemStatusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ⏳ Cargando...';
+                syncStatusEl.textContent = 'Preparando...';
+            }
+        }
+
+        // Mostrar alerta informativa
+        function showDatabaseAlert(message, type = 'info') {
+            const alert = document.getElementById('databaseAlert');
+            const alertText = document.getElementById('databaseAlertText');
+            
+            alert.className = `alert alert-${type}`;
+            alertText.innerHTML = message;
+            alert.style.display = 'block';
+            
+            // Auto-ocultar después de 5 segundos para alertas de éxito
+            if (type === 'success') {
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Configurar alertas iniciales
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mostrar alerta inicial
+            showDatabaseAlert('🔄 Inicializando base de datos... Por favor espera.', 'info');
+            
+            // Actualizar información del sistema cada 5 segundos
+            setInterval(updateSystemInfo, 5000);
+            
+            // Verificar si Firebase está disponible después de la inicialización
+            setTimeout(() => {
+                if (typeof isFirebaseEnabled !== 'undefined') {
+                    if (isFirebaseEnabled) {
+                        showDatabaseAlert('✅ Conectado a Firebase Cloud Database. Los datos se sincronizan automáticamente.', 'success');
+                    } else {
+                        showDatabaseAlert('⚠️ Firebase no disponible. Usando almacenamiento local - Los datos solo estarán disponibles en este dispositivo.', 'warning');
+                    }
+                }
+                updateSystemInfo();
+            }, 3000);
+        });
+
+        // Detectar cambios de conectividad
+        window.addEventListener('online', function() {
+            console.log('Conexión a internet restaurada');
+            showDatabaseAlert('🌐 Conexión restaurada. Sincronizando datos...', 'success');
+            setTimeout(() => {
+                if (typeof loadDatabaseData === 'function') {
+                    loadDatabaseData();
+                }
+            }, 1000);
+        });
+
+        window.addEventListener('offline', function() {
+            console.log('Conexión a internet perdida');
+            showDatabaseAlert('📵 Sin conexión a internet. Los datos se guardarán localmente y se sincronizarán cuando se restaure la conexión.', 'warning');
+        });
+    </script>
+
     <script src="js/database-simulator.js"></script>
 </body>
-
 </html>
