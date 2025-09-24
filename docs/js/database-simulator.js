@@ -1,17 +1,66 @@
+// =================== CONFIGURACIÓN DE FIREBASE ===================
+// Configuración de Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyB7Dor7f9khb5DE3iKHB-jiAcZlcLeXaKE",
+    authDomain: "agrotec-2bc95.firebaseapp.com",
+    databaseURL: "https://agrotec-2bc95-default-rtdb.firebaseio.com",
+    projectId: "agrotec-2bc95",
+    storageBucket: "agrotec-2bc95.firebasestorage.app",
+    messagingSenderId: "153858986703",
+    appId: "1:153858986703:web:60052305723fbf60399dba",
+    measurementId: "G-6SHXS102JQ"
+};
+
+// Variables para Firebase
+let db = null;
+let isFirebaseEnabled = false;
+
+// Intentar inicializar Firebase
+function initializeFirebase() {
+    try {
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            isFirebaseEnabled = true;
+            console.log('Firebase inicializado correctamente');
+            
+            // Configurar persistencia offline
+            db.enablePersistence()
+                .catch((err) => {
+                    if (err.code == 'failed-precondition') {
+                        console.log('Persistencia offline no disponible - múltiples pestañas abiertas');
+                    } else if (err.code == 'unimplemented') {
+                        console.log('Persistencia offline no compatible con este navegador');
+                    }
+                });
+        } else {
+            console.warn('Firebase SDK no cargado - usando localStorage como respaldo');
+            isFirebaseEnabled = false;
+        }
+    } catch (error) {
+        console.error('Error inicializando Firebase:', error);
+        isFirebaseEnabled = false;
+    }
+}
+
 // =================== VARIABLES GLOBALES ===================
 let users = [];
 let farmers = [];
 let customers = [];
 let currentSheet = 'usuarios';
 
-// =================== FUNCIONES DE CARGA DE DATOS ===================
-function loadDatabaseData() {
+// =================== FUNCIONES DE BASE DE DATOS HÍBRIDA ===================
+
+// Cargar datos desde Firebase o localStorage
+async function loadDatabaseData() {
     console.log('Cargando datos de la base de datos...');
     
     try {
-        users = JSON.parse(localStorage.getItem('agrotec_users')) || [];
-        farmers = JSON.parse(localStorage.getItem('agrotec_farmers')) || [];
-        customers = JSON.parse(localStorage.getItem('agrotec_customers')) || [];
+        if (isFirebaseEnabled) {
+            await loadFromFirebase();
+        } else {
+            loadFromLocalStorage();
+        }
         
         console.log('Datos cargados:', { 
             users: users.length, 
@@ -24,48 +73,191 @@ function loadDatabaseData() {
             renderCurrentSheet();
         }
         
-        // Solo actualizar si los elementos existen
         updateLastUpdate();
         
     } catch (error) {
         console.error('Error cargando datos:', error);
-        showError('Error cargando datos de la base de datos: ' + error.message);
+        // Fallback a localStorage si Firebase falla
+        loadFromLocalStorage();
+        showError('Error cargando datos en línea, usando datos locales: ' + error.message);
     }
 }
 
+// Cargar desde Firebase
+async function loadFromFirebase() {
+    if (!isFirebaseEnabled) {
+        throw new Error('Firebase no está disponible');
+    }
+    
+    try {
+        console.log('Cargando desde Firebase...');
+        
+        // Cargar usuarios
+        const usersSnapshot = await db.collection('users').get();
+        users = usersSnapshot.docs.map(doc => ({
+            id: doc.data().id,
+            ...doc.data()
+        }));
+        
+        // Cargar farmers
+        const farmersSnapshot = await db.collection('farmers').get();
+        farmers = farmersSnapshot.docs.map(doc => ({
+            userId: doc.data().userId,
+            ...doc.data()
+        }));
+        
+        // Cargar customers
+        const customersSnapshot = await db.collection('customers').get();
+        customers = customersSnapshot.docs.map(doc => ({
+            userId: doc.data().userId,
+            ...doc.data()
+        }));
+        
+        // Sincronizar con localStorage como backup
+        localStorage.setItem('agrotec_users', JSON.stringify(users));
+        localStorage.setItem('agrotec_farmers', JSON.stringify(farmers));
+        localStorage.setItem('agrotec_customers', JSON.stringify(customers));
+        
+        console.log('Datos cargados desde Firebase exitosamente');
+        
+    } catch (error) {
+        console.error('Error cargando desde Firebase:', error);
+        throw error;
+    }
+}
+
+// Cargar desde localStorage (fallback)
+function loadFromLocalStorage() {
+    console.log('Cargando desde localStorage...');
+    
+    users = JSON.parse(localStorage.getItem('agrotec_users')) || [];
+    farmers = JSON.parse(localStorage.getItem('agrotec_farmers')) || [];
+    customers = JSON.parse(localStorage.getItem('agrotec_customers')) || [];
+}
+
+// Guardar datos en Firebase y localStorage
+async function saveToDatabase() {
+    try {
+        if (isFirebaseEnabled) {
+            await saveToFirebase();
+        }
+        
+        // Siempre guardar en localStorage como backup
+        saveToLocalStorage();
+        
+    } catch (error) {
+        console.error('Error guardando en Firebase, usando solo localStorage:', error);
+        saveToLocalStorage();
+        showError('Error guardando en línea, datos guardados localmente');
+    }
+}
+
+// Guardar en Firebase
+async function saveToFirebase() {
+    if (!isFirebaseEnabled) {
+        return;
+    }
+    
+    const batch = db.batch();
+    
+    try {
+        console.log('Guardando en Firebase...');
+        
+        // Guardar usuarios
+        for (const user of users) {
+            const userRef = db.collection('users').doc(user.id.toString());
+            batch.set(userRef, user, { merge: true });
+        }
+        
+        // Guardar farmers
+        for (const farmer of farmers) {
+            const farmerRef = db.collection('farmers').doc(farmer.userId.toString());
+            batch.set(farmerRef, farmer, { merge: true });
+        }
+        
+        // Guardar customers
+        for (const customer of customers) {
+            const customerRef = db.collection('customers').doc(customer.userId.toString());
+            batch.set(customerRef, customer, { merge: true });
+        }
+        
+        await batch.commit();
+        console.log('Datos guardados en Firebase exitosamente');
+        
+    } catch (error) {
+        console.error('Error guardando en Firebase:', error);
+        throw error;
+    }
+}
+
+// Guardar en localStorage
+function saveToLocalStorage() {
+    localStorage.setItem('agrotec_users', JSON.stringify(users));
+    localStorage.setItem('agrotec_farmers', JSON.stringify(farmers));
+    localStorage.setItem('agrotec_customers', JSON.stringify(customers));
+}
+
+// Eliminar de Firebase
+async function deleteFromFirebase(userId) {
+    if (!isFirebaseEnabled) {
+        return;
+    }
+    
+    try {
+        const batch = db.batch();
+        
+        // Eliminar usuario
+        const userRef = db.collection('users').doc(userId.toString());
+        batch.delete(userRef);
+        
+        // Eliminar farmer si existe
+        const farmerRef = db.collection('farmers').doc(userId.toString());
+        batch.delete(farmerRef);
+        
+        // Eliminar customer si existe
+        const customerRef = db.collection('customers').doc(userId.toString());
+        batch.delete(customerRef);
+        
+        await batch.commit();
+        console.log('Usuario eliminado de Firebase:', userId);
+        
+    } catch (error) {
+        console.error('Error eliminando de Firebase:', error);
+        throw error;
+    }
+}
+
+// =================== FUNCIONES DE NAVEGACIÓN ===================
 function updateLastUpdate() {
     try {
         const now = new Date().toLocaleString('es-ES');
+        const status = isFirebaseEnabled ? 'En línea (Firebase)' : 'Local (localStorage)';
         
         const lastUpdateEl = document.getElementById('lastUpdate');
         const footerUpdateEl = document.getElementById('footerUpdate');
         const totalRecordsEl = document.getElementById('totalRecords');
         
         if (lastUpdateEl) lastUpdateEl.textContent = now;
-        if (footerUpdateEl) footerUpdateEl.textContent = `Ultima actualizacion: ${now}`;
+        if (footerUpdateEl) footerUpdateEl.textContent = `Última actualización: ${now} - ${status}`;
         if (totalRecordsEl) totalRecordsEl.textContent = users.length + farmers.length + customers.length;
         
     } catch (error) {
-        console.log('Elementos de actualizacion no encontrados (normal en pagina de login)');
+        console.log('Elementos de actualización no encontrados (normal en página de login)');
     }
 }
 
-// =================== FUNCIONES DE NAVEGACION ===================
 function showSheet(sheetName) {
-    // Verificar que los elementos existan antes de manipularlos
     const sheets = document.querySelectorAll('.sheet');
     const tabs = document.querySelectorAll('.tab');
     
     if (sheets.length === 0 || tabs.length === 0) {
-        console.log('Elementos de navegacion no encontrados');
+        console.log('Elementos de navegación no encontrados');
         return;
     }
     
-    // Ocultar todas las hojas
     sheets.forEach(sheet => sheet.classList.remove('active'));
     tabs.forEach(tab => tab.classList.remove('active'));
 
-    // Mostrar la hoja seleccionada
     const targetSheet = document.getElementById(sheetName);
     if (targetSheet) {
         targetSheet.classList.add('active');
@@ -79,9 +271,8 @@ function showSheet(sheetName) {
 }
 
 function renderCurrentSheet() {
-    // Solo renderizar si estamos en la pagina de base de datos
     if (!document.getElementById('usersTableBody')) {
-        console.log('Tabla de usuarios no encontrada - probablemente en pagina de login');
+        console.log('Tabla de usuarios no encontrada - probablemente en página de login');
         return;
     }
     
@@ -132,7 +323,7 @@ function renderUsers(filteredUsers = users) {
             <td>${user.date}</td>
             <td class="${user.status === 'ACTIVO' ? 'status-active' : 'status-inactive'}">${user.status}</td>
             <td>
-                <button class="btn-delete" onclick="deleteUser(${user.id})" title="Eliminar usuario">
+                <button class="btn-delete" onclick="confirmDeleteUser(${user.id})" title="Eliminar usuario">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -140,7 +331,6 @@ function renderUsers(filteredUsers = users) {
     `).join('');
 }
 
-// =================== FUNCIONES CORREGIDAS PARA FARMERS ===================
 function renderFarmers(filteredFarmers = null) {
     const tbody = document.getElementById('farmersTableBody');
     if (!tbody) {
@@ -148,7 +338,6 @@ function renderFarmers(filteredFarmers = null) {
         return;
     }
     
-    // CORRECCION: Filtrar solo usuarios de tipo FARMER
     const farmerUsers = filteredFarmers || users.filter(user => user.type === 'FARMER');
     
     if (farmerUsers.length === 0) {
@@ -164,15 +353,11 @@ function renderFarmers(filteredFarmers = null) {
     }
     
     tbody.innerHTML = farmerUsers.map(user => {
-        // CORRECCION PRINCIPAL: Buscar datos de farmer correctamente
         const farmerData = farmers.find(f => f.userId === user.id) || {};
         
-        // CORRECCION: Usar los campos correctos del farmer
         const location = farmerData.location || user.location || 'No especificado';
         const businessName = farmerData.business || farmerData.businessName || user.businessName || 'No especificado';
         const businessPhone = farmerData.businessPhone || user.businessPhone || user.phone || 'No especificado';
-        
-        console.log(`Farmer ID ${user.id}:`, { location, businessName, businessPhone, farmerData });
         
         return `
             <tr>
@@ -183,7 +368,7 @@ function renderFarmers(filteredFarmers = null) {
                 <td>${businessPhone}</td>
                 <td>${user.date}</td>
                 <td>
-                    <button class="btn-delete" onclick="deleteUser(${user.id})" title="Eliminar farmer">
+                    <button class="btn-delete" onclick="confirmDeleteUser(${user.id})" title="Eliminar farmer">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -199,7 +384,6 @@ function renderCustomers(filteredCustomers = null) {
         return;
     }
     
-    // Filtrar solo usuarios de tipo CUSTOMER
     const customerUsers = filteredCustomers || users.filter(user => user.type === 'CUSTOMER');
     
     if (customerUsers.length === 0) {
@@ -215,7 +399,6 @@ function renderCustomers(filteredCustomers = null) {
     }
     
     tbody.innerHTML = customerUsers.map(user => {
-        // Buscar datos adicionales del customer si existen
         const customerData = customers.find(c => c.userId === user.id) || {};
         return `
             <tr>
@@ -228,7 +411,7 @@ function renderCustomers(filteredCustomers = null) {
                     ${user.status}
                 </td>
                 <td>
-                    <button class="btn-delete" onclick="deleteUser(${user.id})" title="Eliminar customer">
+                    <button class="btn-delete" onclick="confirmDeleteUser(${user.id})" title="Eliminar customer">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -256,21 +439,17 @@ function renderDashboard() {
 
 // =================== FUNCIONES PARA AGREGAR USUARIOS ===================
 
-// Funcion principal para agregar un nuevo usuario - CORREGIDA
-function addUser(userData) {
+async function addUser(userData) {
     try {
         console.log('Agregando usuario base:', userData);
         
-        // Generar nuevo ID
         const maxId = Math.max(0, ...users.map(u => u.id)) + 1;
         const currentDate = new Date().toLocaleDateString('es-ES');
         
-        // Verificar si el email ya existe
         if (users.some(u => u.email === userData.email)) {
-            throw new Error('El email ya esta registrado');
+            throw new Error('El email ya está registrado');
         }
         
-        // CORRECCION: Crear objeto usuario incluyendo TODOS los campos del farmer
         const newUser = {
             id: maxId,
             type: userData.type || 'CUSTOMER',
@@ -279,7 +458,6 @@ function addUser(userData) {
             email: userData.email,
             password: userData.password,
             phone: userData.phone || '',
-            // CORRECCION PRINCIPAL: Agregar campos específicos de farmer al usuario base
             location: userData.location || '',
             businessName: userData.businessName || userData.business || '',
             businessPhone: userData.businessPhone || '',
@@ -287,11 +465,10 @@ function addUser(userData) {
             status: 'ACTIVO'
         };
         
-        // Agregar a la array de usuarios
         users.push(newUser);
         
-        // Guardar en localStorage
-        localStorage.setItem('agrotec_users', JSON.stringify(users));
+        // Guardar en base de datos (Firebase + localStorage)
+        await saveToDatabase();
         
         console.log('Usuario base agregado exitosamente:', newUser);
         return { success: true, user: newUser };
@@ -302,14 +479,10 @@ function addUser(userData) {
     }
 }
 
-// CORRECCION PRINCIPAL: Función mejorada para agregar farmer
-function addFarmer(userData, farmerData) {
+async function addFarmer(userData, farmerData) {
     try {
         console.log('Iniciando registro de farmer...');
-        console.log('Datos de usuario recibidos:', userData);
-        console.log('Datos de farmer recibidos:', farmerData);
         
-        // CORRECCION: Combinar todos los datos correctamente
         const combinedData = {
             ...userData,
             type: 'FARMER',
@@ -320,10 +493,7 @@ function addFarmer(userData, farmerData) {
             phone: userData.phone || farmerData.businessPhone || ''
         };
         
-        console.log('Datos combinados para farmer:', combinedData);
-        
-        // Agregar usuario base con todos los datos
-        const userResult = addUser(combinedData);
+        const userResult = await addUser(combinedData);
         
         if (!userResult.success) {
             console.error('Error creando usuario base para farmer:', userResult.error);
@@ -332,29 +502,23 @@ function addFarmer(userData, farmerData) {
         
         const currentDate = new Date().toLocaleDateString('es-ES');
         
-        // CORRECCION: Crear objeto farmer con los datos correctos
         const newFarmer = {
             userId: userResult.user.id,
             location: combinedData.location,
             business: combinedData.business,
-            businessName: combinedData.businessName, // Campo adicional por si acaso
+            businessName: combinedData.businessName,
             businessPhone: combinedData.businessPhone,
             date: currentDate
         };
         
-        // Agregar a la array de farmers
         farmers.push(newFarmer);
         
-        // Guardar en localStorage
-        localStorage.setItem('agrotec_farmers', JSON.stringify(farmers));
+        // Guardar en base de datos
+        await saveToDatabase();
         
-        console.log('Farmer agregado exitosamente:');
-        console.log('- Usuario:', userResult.user);
-        console.log('- Farmer:', newFarmer);
-        
+        console.log('Farmer agregado exitosamente');
         showSuccess(`Farmer ${userData.name} ${userData.lastName} registrado exitosamente`);
         
-        // Actualizar vista si estamos en la página de base de datos
         if (document.getElementById('farmersTableBody')) {
             refreshCurrentView();
         }
@@ -368,15 +532,11 @@ function addFarmer(userData, farmerData) {
     }
 }
 
-// Funcion especifica para agregar customer
-function addCustomer(userData, customerData) {
+async function addCustomer(userData, customerData) {
     try {
         console.log('Iniciando registro de customer...');
-        console.log('Datos de usuario:', userData);
-        console.log('Datos de customer:', customerData);
         
-        // Primero agregar el usuario base
-        const userResult = addUser({ ...userData, type: 'CUSTOMER' });
+        const userResult = await addUser({ ...userData, type: 'CUSTOMER' });
         
         if (!userResult.success) {
             console.error('Error creando usuario base para customer:', userResult.error);
@@ -385,23 +545,20 @@ function addCustomer(userData, customerData) {
         
         const currentDate = new Date().toLocaleDateString('es-ES');
         
-        // Crear objeto customer
         const newCustomer = {
             userId: userResult.user.id,
             contactPhone: customerData.contactPhone || userData.phone || '',
             date: currentDate
         };
         
-        // Agregar a la array de customers
         customers.push(newCustomer);
         
-        // Guardar en localStorage
-        localStorage.setItem('agrotec_customers', JSON.stringify(customers));
+        // Guardar en base de datos
+        await saveToDatabase();
         
         console.log('Customer agregado exitosamente:', newCustomer);
         showSuccess(`Customer ${userData.name} ${userData.lastName} registrado exitosamente`);
         
-        // Actualizar vista solo si estamos en la pagina de base de datos
         if (document.getElementById('customersTableBody')) {
             refreshCurrentView();
         }
@@ -415,83 +572,31 @@ function addCustomer(userData, customerData) {
     }
 }
 
-// Funcion para actualizar vistas
-function refreshCurrentView() {
-    try {
-        if (currentSheet === 'farmers') {
-            renderFarmers();
-        } else if (currentSheet === 'customers') {
-            renderCustomers();
-        } else if (currentSheet === 'dashboard') {
-            renderDashboard();
-        } else if (currentSheet === 'usuarios') {
-            renderUsers();
-        }
-    } catch (error) {
-        console.error('Error actualizando vista:', error);
-    }
-}
-
-// Funcion para validar datos de usuario
-function validateUserData(userData) {
-    const errors = [];
-    
-    if (!userData.name || userData.name.trim().length < 2) {
-        errors.push('El nombre debe tener al menos 2 caracteres');
-    }
-    
-    if (!userData.lastName || userData.lastName.trim().length < 2) {
-        errors.push('El apellido debe tener al menos 2 caracteres');
-    }
-    
-    if (!userData.email || !isValidEmail(userData.email)) {
-        errors.push('Debe proporcionar un email valido');
-    }
-    
-    if (!userData.password || userData.password.length < 6) {
-        errors.push('La contrasena debe tener al menos 6 caracteres');
-    }
-    
-    return errors;
-}
-
-// Funcion para validar email
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-// =================== FUNCION PRINCIPAL CORREGIDA ===================
-
-// CORRECCION PRINCIPAL: Función registerUser mejorada
-function registerUser(formData) {
+// Función principal para registro (ahora async)
+async function registerUser(formData) {
     console.log('=== INICIANDO REGISTRO DE USUARIO ===');
     console.log('Datos recibidos del formulario:', formData);
     
     try {
-        // Validar datos
         const validationErrors = validateUserData(formData);
         if (validationErrors.length > 0) {
-            console.error('Errores de validacion:', validationErrors);
-            showError('Errores de validacion: ' + validationErrors.join(', '));
+            console.error('Errores de validación:', validationErrors);
+            showError('Errores de validación: ' + validationErrors.join(', '));
             return { success: false, errors: validationErrors };
         }
         
-        // Normalizar tipo de usuario
         const userType = (formData.userType || 'customer').toLowerCase();
         console.log('Tipo de usuario normalizado:', userType);
         
-        // Registrar segun el tipo
         if (userType === 'farmer') {
             console.log('Registrando como FARMER...');
             
-            // CORRECCION PRINCIPAL: Mapear correctamente todos los campos
             const farmerUserData = {
                 name: formData.name,
                 lastName: formData.lastName,
                 email: formData.email,
                 password: formData.password,
-                phone: formData.farmerPhone || formData.businessPhone || formData.phone || '', // Teléfono del negocio
+                phone: formData.farmerPhone || formData.businessPhone || formData.phone || '',
                 businessPhone: formData.farmerPhone || formData.businessPhone || formData.phone || ''
             };
             
@@ -502,19 +607,13 @@ function registerUser(formData) {
                 businessPhone: formData.farmerPhone || formData.businessPhone || formData.phone || ''
             };
             
-            console.log('Datos de farmer procesados:');
-            console.log('- Usuario:', farmerUserData);
-            console.log('- Farmer específico:', farmerSpecificData);
-            
-            const result = addFarmer(farmerUserData, farmerSpecificData);
-            
-            console.log('Resultado registro farmer:', result);
+            const result = await addFarmer(farmerUserData, farmerSpecificData);
             return result;
             
         } else {
             console.log('Registrando como CUSTOMER...');
             
-            const result = addCustomer(
+            const result = await addCustomer(
                 {
                     name: formData.name,
                     lastName: formData.lastName,
@@ -527,7 +626,6 @@ function registerUser(formData) {
                 }
             );
             
-            console.log('Resultado registro customer:', result);
             return result;
         }
         
@@ -538,105 +636,275 @@ function registerUser(formData) {
     }
 }
 
-// Funcion para login (validar usuario existente)
-function loginUser(email, password) {
-    console.log('=== INICIANDO LOGIN ===');
-    console.log('Email:', email);
-    
-    try {
-        // Buscar usuario
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (!user) {
-            console.log('Usuario no encontrado o contrasena incorrecta');
-            return { success: false, error: 'Email o contrasena incorrectos' };
-        }
-        
-        if (user.status !== 'ACTIVO') {
-            console.log('Usuario inactivo:', user.status);
-            return { success: false, error: 'Usuario inactivo' };
-        }
-        
-        console.log('Login exitoso para usuario:', user.name, user.lastName);
-        return { success: true, user: user };
-        
-    } catch (error) {
-        console.error('Error en login:', error);
-        return { success: false, error: 'Error interno del servidor' };
-    }
-}
+// =================== FUNCIONES DE ELIMINACIÓN - FIJAS ===================
 
-// Funcion para recuperacion de contraseña
-function recoverPassword(email) {
-    console.log('=== INICIANDO RECUPERACION DE CONTRASEÑA ===');
-    console.log('Email para recuperacion:', email);
-    
-    try {
-        // Buscar usuario por email
-        const user = users.find(u => u.email === email);
-        
-        if (!user) {
-            console.log('Usuario no encontrado para recuperacion');
-            return { success: false, error: 'Email no registrado' };
-        }
-        
-        if (user.status !== 'ACTIVO') {
-            console.log('Usuario inactivo para recuperacion:', user.status);
-            return { success: false, error: 'Usuario inactivo' };
-        }
-        
-        // En un sistema real, aqui enviarías un email
-        // Por ahora, devolvemos la contraseña directamente
-        console.log('Contraseña encontrada para usuario:', user.name, user.lastName);
-        return { 
-            success: true, 
-            message: 'Contraseña encontrada',
-            password: user.password, // En producción, enviarías un email en lugar de esto
-            user: {
-                name: user.name,
-                lastName: user.lastName,
-                email: user.email
-            }
-        };
-        
-    } catch (error) {
-        console.error('Error en recuperacion de contraseña:', error);
-        return { success: false, error: 'Error interno del servidor' };
-    }
-}
-
-// =================== FUNCIONES DE ELIMINACION ===================
-function deleteUser(userId) {
-    if (!confirm(`Estas seguro de que deseas eliminar el usuario con ID ${userId}? Esta accion no se puede deshacer.`)) {
+// Función para confirmar eliminación con modal personalizado
+function confirmDeleteUser(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) {
+        showError('Usuario no encontrado');
         return;
     }
     
+    // Crear modal de confirmación personalizado
+    const modal = document.createElement('div');
+    modal.className = 'delete-confirmation-modal';
+    modal.innerHTML = `
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h3>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar el usuario?</p>
+                    <div class="user-info">
+                        <strong>${user.name} ${user.lastName}</strong><br>
+                        <span class="user-email">${user.email}</span><br>
+                        <span class="user-type ${user.type === 'FARMER' ? 'farmer-type' : 'customer-type'}">${user.type}</span>
+                    </div>
+                    <p class="warning-text">
+                        <i class="fas fa-warning"></i>
+                        Esta acción no se puede deshacer
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" onclick="closeDeleteModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="btn-confirm-delete" onclick="executeDeleteUser(${userId})">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar estilos del modal
+    const modalStyles = document.createElement('style');
+    modalStyles.textContent = `
+        .delete-confirmation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+        }
+        
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            text-align: center;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #dc3545;
+            font-size: 1.3em;
+        }
+        
+        .modal-header i {
+            margin-right: 8px;
+            color: #ffc107;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .user-email {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .user-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .farmer-type {
+            background: #28a745;
+            color: white;
+        }
+        
+        .customer-type {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .warning-text {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+        
+        .warning-text i {
+            margin-right: 5px;
+        }
+        
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .btn-cancel, .btn-confirm-delete {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        
+        .btn-confirm-delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-confirm-delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalSlideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    `;
+    
+    document.head.appendChild(modalStyles);
+    document.body.appendChild(modal);
+    
+    // Enfocar el modal para accesibilidad
+    modal.querySelector('.btn-cancel').focus();
+    
+    // Cerrar modal con ESC
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            closeDeleteModal();
+        }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    modal.handleKeyDown = handleKeyDown;
+}
+
+// Cerrar modal de eliminación
+function closeDeleteModal() {
+    const modal = document.querySelector('.delete-confirmation-modal');
+    if (modal) {
+        // Eliminar listener de teclado
+        if (modal.handleKeyDown) {
+            document.removeEventListener('keydown', modal.handleKeyDown);
+        }
+        
+        // Animación de salida
+        modal.querySelector('.modal-overlay').style.animation = 'fadeOut 0.3s ease-in';
+        modal.querySelector('.modal-content').style.animation = 'modalSlideOut 0.3s ease-in';
+        
+        setTimeout(() => {
+            if (document.body.contains(modal)) {
+                document.body.removeChild(modal);
+            }
+        }, 300);
+    }
+}
+
+// Ejecutar eliminación del usuario
+async function executeDeleteUser(userId) {
     try {
         console.log('Eliminando usuario ID:', userId);
         
-        // Eliminar de la tabla usuarios
+        // Cerrar modal
+        closeDeleteModal();
+        
+        // Mostrar indicador de carga
+        showLoadingIndicator('Eliminando usuario...');
+        
         const usersBefore = users.length;
         users = users.filter(user => user.id !== userId);
         const usersAfter = users.length;
         
-        // Eliminar de farmers si existe
         const farmersBefore = farmers.length;
         farmers = farmers.filter(farmer => farmer.userId !== userId);
         const farmersAfter = farmers.length;
         
-        // Eliminar de customers si existe
         const customersBefore = customers.length;
         customers = customers.filter(customer => customer.userId !== userId);
         const customersAfter = customers.length;
         
-        // Guardar cambios en localStorage
-        localStorage.setItem('agrotec_users', JSON.stringify(users));
-        localStorage.setItem('agrotec_farmers', JSON.stringify(farmers));
-        localStorage.setItem('agrotec_customers', JSON.stringify(customers));
+        // Guardar cambios en base de datos
+        await saveToDatabase();
+        
+        // También eliminar de Firebase específicamente
+        if (isFirebaseEnabled) {
+            await deleteFromFirebase(userId);
+        }
         
         console.log(`Usuario eliminado. Users: ${usersBefore}->${usersAfter}, Farmers: ${farmersBefore}->${farmersAfter}, Customers: ${customersBefore}->${customersAfter}`);
         
-        // Refrescar vista
+        // Ocultar indicador de carga
+        hideLoadingIndicator();
+        
+        // Actualizar vista
         renderCurrentSheet();
         updateLastUpdate();
         
@@ -644,11 +912,145 @@ function deleteUser(userId) {
         
     } catch (error) {
         console.error('Error eliminando usuario:', error);
-        showError('Error al eliminar el usuario');
+        hideLoadingIndicator();
+        showError('Error al eliminar el usuario: ' + error.message);
     }
 }
 
-// =================== FUNCIONES DE BUSQUEDA CORREGIDAS ===================
+// Función para mostrar indicador de carga
+function showLoadingIndicator(message = 'Cargando...') {
+    // Remover indicador existente si existe
+    hideLoadingIndicator();
+    
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loadingIndicator';
+    loadingDiv.className = 'loading-indicator';
+    loadingDiv.innerHTML = `
+        <div class="loading-overlay">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>${message}</p>
+            </div>
+        </div>
+    `;
+    
+    // Agregar estilos del loading
+    const loadingStyles = document.createElement('style');
+    loadingStyles.id = 'loadingStyles';
+    loadingStyles.textContent = `
+        .loading-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        @keyframes modalSlideOut {
+            from { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to { 
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+        }
+    `;
+    
+    if (!document.getElementById('loadingStyles')) {
+        document.head.appendChild(loadingStyles);
+    }
+    document.body.appendChild(loadingDiv);
+}
+
+// Función para ocultar indicador de carga
+function hideLoadingIndicator() {
+    const loadingDiv = document.getElementById('loadingIndicator');
+    if (loadingDiv) {
+        document.body.removeChild(loadingDiv);
+    }
+}
+
+// Función para actualizar datos manualmente - NUEVA FUNCIÓN ARREGLADA
+async function refreshData() {
+    try {
+        console.log('=== ACTUALIZANDO DATOS MANUALMENTE ===');
+        
+        showLoadingIndicator('Actualizando datos...');
+        
+        // Recargar datos desde la fuente
+        await loadDatabaseData();
+        
+        // Sincronizar datos
+        syncUserData();
+        
+        // Actualizar vista actual
+        if (document.getElementById('usersTableBody') || document.getElementById('farmersTableBody') || document.getElementById('customersTableBody')) {
+            renderCurrentSheet();
+        }
+        
+        // Actualizar dashboard si existe
+        if (document.getElementById('totalUsers')) {
+            renderDashboard();
+        }
+        
+        hideLoadingIndicator();
+        
+        const status = isFirebaseEnabled ? 'Firebase' : 'localStorage';
+        showSuccess(`Datos actualizados exitosamente desde ${status}`);
+        
+        console.log('Datos actualizados manualmente exitosamente');
+        
+    } catch (error) {
+        console.error('Error actualizando datos:', error);
+        hideLoadingIndicator();
+        showError('Error al actualizar los datos: ' + error.message);
+    }
+}
+
+// =================== FUNCIONES DE BÚSQUEDA ===================
 function searchUsers(query) {
     if (!query.trim()) {
         renderUsers();
@@ -672,7 +1074,6 @@ function searchFarmers(query) {
         return;
     }
     
-    // Buscar dentro de usuarios de tipo FARMER
     const farmerUsers = users.filter(user => user.type === 'FARMER');
     const filtered = farmerUsers.filter(user => {
         const farmerData = farmers.find(f => f.userId === user.id) || {};
@@ -696,7 +1097,6 @@ function searchCustomers(query) {
         return;
     }
     
-    // Buscar dentro de usuarios de tipo CUSTOMER
     const customerUsers = users.filter(user => user.type === 'CUSTOMER');
     const filtered = customerUsers.filter(user => {
         const customerData = customers.find(c => c.userId === user.id) || {};
@@ -710,7 +1110,123 @@ function searchCustomers(query) {
     renderCustomers(filtered);
 }
 
-// =================== FUNCIONES DE EXPORTACION ===================
+// =================== FUNCIONES DE UTILIDAD ===================
+function refreshCurrentView() {
+    try {
+        switch(currentSheet) {
+            case 'farmers':
+                renderFarmers();
+                break;
+            case 'customers':
+                renderCustomers();
+                break;
+            case 'dashboard':
+                renderDashboard();
+                break;
+            case 'usuarios':
+                renderUsers();
+                break;
+        }
+    } catch (error) {
+        console.error('Error actualizando vista:', error);
+    }
+}
+
+function validateUserData(userData) {
+    const errors = [];
+    
+    if (!userData.name || userData.name.trim().length < 2) {
+        errors.push('El nombre debe tener al menos 2 caracteres');
+    }
+    
+    if (!userData.lastName || userData.lastName.trim().length < 2) {
+        errors.push('El apellido debe tener al menos 2 caracteres');
+    }
+    
+    if (!userData.email || !isValidEmail(userData.email)) {
+        errors.push('Debe proporcionar un email válido');
+    }
+    
+    if (!userData.password || userData.password.length < 6) {
+        errors.push('La contraseña debe tener al menos 6 caracteres');
+    }
+    
+    return errors;
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+async function loginUser(email, password) {
+    console.log('=== INICIANDO LOGIN ===');
+    console.log('Email:', email);
+    
+    try {
+        // Cargar datos más recientes antes del login
+        await loadDatabaseData();
+        
+        const user = users.find(u => u.email === email && u.password === password);
+        
+        if (!user) {
+            console.log('Usuario no encontrado o contraseña incorrecta');
+            return { success: false, error: 'Email o contraseña incorrectos' };
+        }
+        
+        if (user.status !== 'ACTIVO') {
+            console.log('Usuario inactivo:', user.status);
+            return { success: false, error: 'Usuario inactivo' };
+        }
+        
+        console.log('Login exitoso para usuario:', user.name, user.lastName);
+        return { success: true, user: user };
+        
+    } catch (error) {
+        console.error('Error en login:', error);
+        return { success: false, error: 'Error interno del servidor' };
+    }
+}
+
+async function recoverPassword(email) {
+    console.log('=== INICIANDO RECUPERACIÓN DE CONTRASEÑA ===');
+    console.log('Email para recuperación:', email);
+    
+    try {
+        // Cargar datos más recientes
+        await loadDatabaseData();
+        
+        const user = users.find(u => u.email === email);
+        
+        if (!user) {
+            console.log('Usuario no encontrado para recuperación');
+            return { success: false, error: 'Email no registrado' };
+        }
+        
+        if (user.status !== 'ACTIVO') {
+            console.log('Usuario inactivo para recuperación:', user.status);
+            return { success: false, error: 'Usuario inactivo' };
+        }
+        
+        console.log('Contraseña encontrada para usuario:', user.name, user.lastName);
+        return { 
+            success: true, 
+            message: 'Contraseña encontrada',
+            password: user.password,
+            user: {
+                name: user.name,
+                lastName: user.lastName,
+                email: user.email
+            }
+        };
+        
+    } catch (error) {
+        console.error('Error en recuperación de contraseña:', error);
+        return { success: false, error: 'Error interno del servidor' };
+    }
+}
+
+// =================== FUNCIONES DE EXPORTACIÓN ===================
 function exportData(type) {
     let data = [];
     let filename = '';
@@ -726,7 +1242,6 @@ function exportData(type) {
             break;
             
         case 'farmers':
-            // Exportar solo usuarios de tipo FARMER
             const farmerUsers = users.filter(u => u.type === 'FARMER');
             data = [
                 ['ID_Usuario', 'Nombre_Completo', 'Email', 'Telefono', 'Ubicacion', 'Nombre_Negocio', 'Telefono_Negocio', 'Fecha_Registro'],
@@ -748,7 +1263,6 @@ function exportData(type) {
             break;
             
         case 'customers':
-            // Exportar solo usuarios de tipo CUSTOMER
             const customerUsers = users.filter(u => u.type === 'CUSTOMER');
             data = [
                 ['ID_Usuario', 'Nombre_Completo', 'Email', 'Telefono', 'Telefono_Contacto', 'Fecha_Registro', 'Estado'],
@@ -769,7 +1283,7 @@ function exportData(type) {
             break;
             
         default:
-            console.error('Tipo de exportacion no valido:', type);
+            console.error('Tipo de exportación no válido:', type);
             return;
     }
     
@@ -798,7 +1312,6 @@ function exportData(type) {
 // =================== FUNCIONES DE UTILIDAD ===================
 function showError(message) {
     console.error('ERROR:', message);
-    // Solo mostrar notificacion si estamos en una pagina con interfaz
     if (document.body) {
         showNotification(message, 'error');
     }
@@ -806,14 +1319,12 @@ function showError(message) {
 
 function showSuccess(message) {
     console.log('SUCCESS:', message);
-    // Solo mostrar notificacion si estamos en una pagina con interfaz
     if (document.body) {
         showNotification(message, 'success');
     }
 }
 
 function showNotification(message, type) {
-    // Crear elemento de notificacion
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.innerHTML = `
@@ -821,7 +1332,6 @@ function showNotification(message, type) {
         ${message}
     `;
     
-    // Estilos inline
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -839,7 +1349,6 @@ function showNotification(message, type) {
     
     document.body.appendChild(notification);
     
-    // Remover despues de 4 segundos
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease-in';
         setTimeout(() => {
@@ -859,25 +1368,21 @@ function formatDate(dateString) {
     }
 }
 
-// =================== FUNCION PARA SINCRONIZAR DATOS ===================
+// =================== FUNCIÓN PARA SINCRONIZAR DATOS ===================
 function syncUserData() {
     try {
         const validUserIds = users.map(u => u.id);
         
-        // Limpiar farmers huerfanos
         const farmersBefore = farmers.length;
         farmers = farmers.filter(f => validUserIds.includes(f.userId));
         
-        // Limpiar customers huerfanos
         const customersBefore = customers.length;
         customers = customers.filter(c => validUserIds.includes(c.userId));
         
-        // Guardar datos limpios
-        localStorage.setItem('agrotec_farmers', JSON.stringify(farmers));
-        localStorage.setItem('agrotec_customers', JSON.stringify(customers));
-        
         if (farmersBefore !== farmers.length || customersBefore !== customers.length) {
             console.log(`Datos sincronizados - Farmers: ${farmersBefore}->${farmers.length}, Customers: ${customersBefore}->${customers.length}`);
+            // Guardar cambios después de sincronizar
+            saveToDatabase().catch(err => console.error('Error guardando después de sincronizar:', err));
         }
         
     } catch (error) {
@@ -885,33 +1390,37 @@ function syncUserData() {
     }
 }
 
-// =================== AUTO-REFRESH ===================
+// =================== AUTO-REFRESH MEJORADO ===================
 function startAutoRefresh() {
-    // Solo iniciar auto-refresh si estamos en la pagina de base de datos
     if (!document.getElementById('usersTableBody')) {
-        console.log('Auto-refresh no iniciado - no estamos en pagina de base de datos');
+        console.log('Auto-refresh no iniciado - no estamos en página de base de datos');
         return;
     }
     
-    console.log('Iniciando auto-refresh cada 3 segundos...');
+    console.log('Iniciando auto-refresh cada 10 segundos...');
     
-    setInterval(() => {
-        const currentUsersLength = users.length;
-        const currentFarmersLength = farmers.length;
-        const currentCustomersLength = customers.length;
-        
-        loadDatabaseData();
-        
-        if (users.length !== currentUsersLength || 
-            farmers.length !== currentFarmersLength || 
-            customers.length !== currentCustomersLength) {
-            console.log('Cambios detectados, actualizando vista...');
-            syncUserData();
+    setInterval(async () => {
+        try {
+            const currentUsersLength = users.length;
+            const currentFarmersLength = farmers.length;
+            const currentCustomersLength = customers.length;
+            
+            await loadDatabaseData();
+            
+            if (users.length !== currentUsersLength || 
+                farmers.length !== currentFarmersLength || 
+                customers.length !== currentCustomersLength) {
+                console.log('Cambios detectados, actualizando vista...');
+                syncUserData();
+                renderCurrentSheet();
+            }
+        } catch (error) {
+            console.error('Error en auto-refresh:', error);
         }
-    }, 3000);
+    }, 10000);
 }
 
-// =================== GESTION DE EVENTOS ===================
+// =================== GESTIÓN DE EVENTOS ===================
 function setupEventListeners() {
     // Event listeners para detectar cambios en localStorage
     window.addEventListener('storage', function(e) {
@@ -922,7 +1431,7 @@ function setupEventListeners() {
         }
     });
     
-    // Event listener para detectar cuando el usuario vuelve a la pestana
+    // Event listener para detectar cuando el usuario vuelve a la pestaña
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
             loadDatabaseData();
@@ -935,14 +1444,64 @@ function setupEventListeners() {
         loadDatabaseData();
         syncUserData();
     });
+    
+    // Listener para cambios en Firebase (tiempo real)
+    if (isFirebaseEnabled) {
+        setupFirebaseListeners();
+    }
 }
 
-// =================== INICIALIZACION ===================
-function initDatabase() {
+// Configurar listeners de Firebase para tiempo real
+function setupFirebaseListeners() {
+    try {
+        // Listener para usuarios
+        db.collection('users').onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added" || change.type === "modified") {
+                    console.log("Usuario actualizado en tiempo real:", change.doc.data());
+                    loadDatabaseData(); // Recargar todos los datos
+                }
+            });
+        });
+        
+        // Listener para farmers
+        db.collection('farmers').onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added" || change.type === "modified") {
+                    console.log("Farmer actualizado en tiempo real:", change.doc.data());
+                    loadDatabaseData(); // Recargar todos los datos
+                }
+            });
+        });
+        
+        // Listener para customers
+        db.collection('customers').onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added" || change.type === "modified") {
+                    console.log("Customer actualizado en tiempo real:", change.doc.data());
+                    loadDatabaseData(); // Recargar todos los datos
+                }
+            });
+        });
+        
+        console.log('Listeners de Firebase configurados para actualizaciones en tiempo real');
+    } catch (error) {
+        console.error('Error configurando listeners de Firebase:', error);
+    }
+}
+
+// =================== INICIALIZACIÓN ===================
+async function initDatabase() {
     console.log('=== INICIALIZANDO BASE DE DATOS AGROTEC ===');
     
+    // Inicializar Firebase primero
+    initializeFirebase();
+    
+    // Esperar un momento para que Firebase se inicialice
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     // Cargar datos iniciales
-    loadDatabaseData();
+    await loadDatabaseData();
     
     // Sincronizar datos
     syncUserData();
@@ -950,7 +1509,7 @@ function initDatabase() {
     // Configurar event listeners
     setupEventListeners();
     
-    // Iniciar auto-refresh solo si estamos en la pagina correcta
+    // Iniciar auto-refresh
     startAutoRefresh();
     
     // Renderizar vista inicial solo si los elementos existen
@@ -958,22 +1517,33 @@ function initDatabase() {
         renderCurrentSheet();
     }
     
-    console.log('Base de datos inicializada correctamente');
+    const status = isFirebaseEnabled ? 'Firebase (en línea)' : 'localStorage (local)';
+    console.log(`Base de datos inicializada correctamente usando: ${status}`);
     console.log(`Estado inicial: ${users.length} usuarios, ${farmers.length} farmers, ${customers.length} customers`);
 }
 
 // =================== FUNCIONES GLOBALES PARA FORMULARIOS ===================
 
-// Funcion global para que tu formulario pueda llamarla
+// Funciones globales para formularios (ahora async donde sea necesario)
 window.registerUser = registerUser;
 window.loginUser = loginUser;
 window.recoverPassword = recoverPassword;
 
-// Tambien exponer las otras funciones para debugging y uso externo
+// NUEVA - Función global para refrescar datos
+window.refreshData = refreshData;
+
+// Funciones de debugging mejoradas
 window.databaseDebug = {
     showData: () => {
-        const data = { users, farmers, customers };
+        const data = { 
+            users, 
+            farmers, 
+            customers,
+            isFirebaseEnabled,
+            status: isFirebaseEnabled ? 'Firebase (en línea)' : 'localStorage (local)'
+        };
         console.log('=== DATOS ACTUALES EN BASE DE DATOS ===');
+        console.log('Status:', data.status);
         console.log('Users:', users);
         console.log('Farmers:', farmers);
         console.log('Customers:', customers);
@@ -981,133 +1551,123 @@ window.databaseDebug = {
         return data;
     },
     
-    clearAll: () => {
-        if (!confirm('Estas seguro de eliminar TODOS los datos? Esta accion no se puede deshacer.')) {
+    clearAll: async () => {
+        if (!confirm('¿Estás seguro de eliminar TODOS los datos? Esta acción no se puede deshacer.')) {
             return;
         }
         
-        localStorage.removeItem('agrotec_users');
-        localStorage.removeItem('agrotec_farmers');
-        localStorage.removeItem('agrotec_customers');
-        
-        users = [];
-        farmers = [];
-        customers = [];
-        
-        loadDatabaseData();
-        console.log('Todos los datos eliminados');
-        showSuccess('Todos los datos eliminados');
+        try {
+            // Limpiar Firebase si está disponible
+            if (isFirebaseEnabled) {
+                const batch = db.batch();
+                
+                // Eliminar todos los usuarios
+                const usersSnapshot = await db.collection('users').get();
+                usersSnapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                // Eliminar todos los farmers
+                const farmersSnapshot = await db.collection('farmers').get();
+                farmersSnapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                // Eliminar todos los customers
+                const customersSnapshot = await db.collection('customers').get();
+                customersSnapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                console.log('Datos eliminados de Firebase');
+            }
+            
+            // Limpiar localStorage
+            localStorage.removeItem('agrotec_users');
+            localStorage.removeItem('agrotec_farmers');
+            localStorage.removeItem('agrotec_customers');
+            
+            // Limpiar arrays locales
+            users = [];
+            farmers = [];
+            customers = [];
+            
+            await loadDatabaseData();
+            
+            console.log('Todos los datos eliminados');
+            showSuccess('Todos los datos eliminados');
+            
+        } catch (error) {
+            console.error('Error eliminando datos:', error);
+            showError('Error eliminando datos: ' + error.message);
+        }
     },
     
-    addSampleFarmer: () => {
+    // Resto de funciones de debugging actualizadas para ser async
+    addSampleFarmer: async () => {
         const maxId = Math.max(0, ...users.map(u => u.id)) + 1;
         const currentDate = new Date().toLocaleDateString('es-ES');
         
-        const sampleUser = {
-            id: maxId,
-            type: 'FARMER',
+        const testFarmerData = {
             name: 'Test',
             lastName: 'Farmer',
             email: `testfarmer${maxId}@farm.com`,
             password: 'test123',
-            phone: '6000-0000',
-            location: 'Ciudad de Panama, Panama',
+            farmerPhone: '6000-0000',
+            userType: 'farmer',
+            location: 'Ciudad de Panamá, Panamá',
             businessName: 'Finca Test Business',
-            businessPhone: '6000-0001',
-            date: currentDate,
-            status: 'ACTIVO'
+            businessPhone: '6000-0001'
         };
         
-        const sampleFarmer = {
-            userId: maxId,
-            location: 'Ciudad de Panama, Panama',
-            business: 'Finca Test Business',
-            businessName: 'Finca Test Business',
-            businessPhone: '6000-0001',
-            date: currentDate
-        };
-        
-        users.push(sampleUser);
-        farmers.push(sampleFarmer);
-        
-        localStorage.setItem('agrotec_users', JSON.stringify(users));
-        localStorage.setItem('agrotec_farmers', JSON.stringify(farmers));
-        
-        loadDatabaseData();
-        console.log('Farmer de prueba agregado:', sampleUser);
-        showSuccess('Farmer de prueba agregado');
-        return { user: sampleUser, farmer: sampleFarmer };
+        const result = await registerUser(testFarmerData);
+        console.log('Farmer de prueba agregado:', result);
+        return result;
     },
     
-    addSampleCustomer: () => {
+    addSampleCustomer: async () => {
         const maxId = Math.max(0, ...users.map(u => u.id)) + 1;
-        const currentDate = new Date().toLocaleDateString('es-ES');
         
-        const sampleUser = {
-            id: maxId,
-            type: 'CUSTOMER',
+        const testCustomerData = {
             name: 'Test',
             lastName: 'Customer',
             email: `testcustomer${maxId}@customer.com`,
             password: 'test123',
             phone: '6000-2222',
-            date: currentDate,
-            status: 'ACTIVO'
+            userType: 'customer'
         };
         
-        const sampleCustomer = {
-            userId: maxId,
-            contactPhone: '6000-2222',
-            date: currentDate
-        };
-        
-        users.push(sampleUser);
-        customers.push(sampleCustomer);
-        
-        localStorage.setItem('agrotec_users', JSON.stringify(users));
-        localStorage.setItem('agrotec_customers', JSON.stringify(customers));
-        
-        loadDatabaseData();
-        console.log('Customer de prueba agregado:', sampleUser);
-        showSuccess('Customer de prueba agregado');
-        return { user: sampleUser, customer: sampleCustomer };
+        const result = await registerUser(testCustomerData);
+        console.log('Customer de prueba agregado:', result);
+        return result;
     },
     
-    refresh: () => {
-        console.log('Actualizando datos manualmente...');
-        loadDatabaseData();
-        syncUserData();
-        if (document.getElementById('usersTableBody')) {
-            renderCurrentSheet();
-        }
-        console.log('Datos actualizados manualmente');
-        showSuccess('Datos actualizados');
-    },
+    refresh: refreshData, // Usando la nueva función
     
     // Funciones directas para agregar datos
     addUser: addUser,
     addFarmer: addFarmer,
     addCustomer: addCustomer,
     
-    // Funcion de test completa
-    testRegister: () => {
+    testRegister: async () => {
         console.log('=== EJECUTANDO TEST DE REGISTRO ===');
         
         const testFarmerData = {
             name: 'Juan',
-            lastName: 'Perez',
+            lastName: 'Pérez',
             email: 'juan.perez@testfarm.com',
             password: '123456',
             farmerPhone: '6000-0000',
             userType: 'farmer',
-            location: 'Ciudad de Panama',
+            location: 'Ciudad de Panamá',
             businessName: 'Finca Juan',
             businessPhone: '6000-0001'
         };
         
         const testCustomerData = {
-            name: 'Maria',
-            lastName: 'Garcia',
+            name: 'María',
+            lastName: 'García',
             email: 'maria.garcia@testcustomer.com',
             password: '123456',
             phone: '6000-2222',
@@ -1115,23 +1675,21 @@ window.databaseDebug = {
         };
         
         console.log('Probando registro de farmer...');
-        const farmerResult = registerUser(testFarmerData);
+        const farmerResult = await registerUser(testFarmerData);
         console.log('Resultado farmer:', farmerResult);
         
         console.log('Probando registro de customer...');
-        const customerResult = registerUser(testCustomerData);
+        const customerResult = await registerUser(testCustomerData);
         console.log('Resultado customer:', customerResult);
         
         return { farmerResult, customerResult };
     },
     
-    // Funcion para verificar integridad de datos
     checkIntegrity: () => {
         console.log('=== VERIFICANDO INTEGRIDAD DE DATOS ===');
         
         let issues = [];
         
-        // Verificar que todos los farmers tengan un usuario correspondiente
         farmers.forEach(farmer => {
             const user = users.find(u => u.id === farmer.userId);
             if (!user) {
@@ -1141,7 +1699,6 @@ window.databaseDebug = {
             }
         });
         
-        // Verificar que todos los customers tengan un usuario correspondiente
         customers.forEach(customer => {
             const user = users.find(u => u.id === customer.userId);
             if (!user) {
@@ -1151,7 +1708,6 @@ window.databaseDebug = {
             }
         });
         
-        // Verificar emails duplicados
         const emails = users.map(u => u.email);
         const duplicateEmails = emails.filter((email, index) => emails.indexOf(email) !== index);
         if (duplicateEmails.length > 0) {
@@ -1170,7 +1726,6 @@ window.databaseDebug = {
         return { issues, isValid: issues.length === 0 };
     },
     
-    // Funcion para obtener estadisticas
     getStats: () => {
         const stats = {
             totalUsers: users.length,
@@ -1181,26 +1736,29 @@ window.databaseDebug = {
             farmersWithBusiness: farmers.filter(f => f.business && f.business.trim() !== '').length,
             farmersWithLocation: farmers.filter(f => f.location && f.location.trim() !== '').length,
             customersWithPhone: customers.filter(c => c.contactPhone && c.contactPhone.trim() !== '').length,
+            databaseType: isFirebaseEnabled ? 'Firebase (en línea)' : 'localStorage (local)',
             recentUsers: users.filter(u => {
-                const userDate = new Date(u.date.split('/').reverse().join('-'));
-                const weekAgo = new Date();
-                weekAgo.setDate(weekAgo.getDate() - 7);
-                return userDate >= weekAgo;
+                try {
+                    const userDate = new Date(u.date.split('/').reverse().join('-'));
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return userDate >= weekAgo;
+                } catch {
+                    return false;
+                }
             }).length
         };
         
-        console.log('=== ESTADISTICAS DE LA BASE DE DATOS ===');
+        console.log('=== ESTADÍSTICAS DE LA BASE DE DATOS ===');
         console.table(stats);
         return stats;
     },
     
-    // Funcion para limpiar datos corruptos
-    cleanData: () => {
+    cleanData: async () => {
         console.log('=== LIMPIANDO DATOS CORRUPTOS ===');
         
         let cleaned = 0;
         
-        // Limpiar farmers huerfanos
         const originalFarmers = farmers.length;
         farmers = farmers.filter(farmer => {
             const user = users.find(u => u.id === farmer.userId);
@@ -1208,7 +1766,6 @@ window.databaseDebug = {
         });
         cleaned += originalFarmers - farmers.length;
         
-        // Limpiar customers huerfanos
         const originalCustomers = customers.length;
         customers = customers.filter(customer => {
             const user = users.find(u => u.id === customer.userId);
@@ -1216,20 +1773,17 @@ window.databaseDebug = {
         });
         cleaned += originalCustomers - customers.length;
         
-        // Eliminar usuarios sin tipo valido
         const originalUsers = users.length;
         users = users.filter(user => user.type === 'FARMER' || user.type === 'CUSTOMER');
         cleaned += originalUsers - users.length;
         
         // Guardar datos limpios
-        localStorage.setItem('agrotec_users', JSON.stringify(users));
-        localStorage.setItem('agrotec_farmers', JSON.stringify(farmers));
-        localStorage.setItem('agrotec_customers', JSON.stringify(customers));
+        await saveToDatabase();
         
         console.log(`Datos limpiados: ${cleaned} registros corruptos eliminados`);
         showSuccess(`${cleaned} registros corruptos eliminados`);
         
-        loadDatabaseData();
+        await loadDatabaseData();
         return { cleaned };
     }
 };
@@ -1240,40 +1794,195 @@ window.showSheet = showSheet;
 window.searchUsers = searchUsers;
 window.searchFarmers = searchFarmers;
 window.searchCustomers = searchCustomers;
-window.deleteUser = deleteUser;
+window.deleteUser = executeDeleteUser;  // Actualizado para usar la nueva función
+window.confirmDeleteUser = confirmDeleteUser;  // Nueva función global
+window.closeDeleteModal = closeDeleteModal;  // Nueva función global
 window.exportData = exportData;
 
-// =================== EJECUCION AL CARGAR ===================
+// =================== EJECUCIÓN AL CARGAR ===================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM cargado, inicializando base de datos...');
     
-    // Agregar estilos para botones de eliminacion y notificaciones
+    // Agregar estilos mejorados para botones de eliminación y notificaciones
     const style = document.createElement('style');
     style.textContent = `
         .btn-delete {
             background: #dc3545;
             color: white;
             border: none;
-            padding: 5px 8px;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 35px;
+            height: 35px;
         }
         
         .btn-delete:hover {
             background: #c82333;
-            transform: scale(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
         }
         
+        .btn-delete:active {
+            transform: translateY(0);
+        }
+        
+        .btn-delete i {
+            font-size: 14px;
+        }
+        
+        /* Estilos para las filas de la tabla */
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+        
+        /* Estilos para las notificaciones */
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from { 
+                transform: translateX(100%); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateX(0); 
+                opacity: 1; 
+            }
         }
         
         @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
+            from { 
+                transform: translateX(0); 
+                opacity: 1; 
+            }
+            to { 
+                transform: translateX(100%); 
+                opacity: 0; 
+            }
+        }
+        
+        .notification {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            border-left: 4px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .notification i {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        /* Estilos para botones de acción mejorados */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Estilos responsivos para móvil */
+        @media (max-width: 768px) {
+            .btn-delete {
+                padding: 6px 8px;
+                font-size: 11px;
+                min-width: 30px;
+                height: 30px;
+            }
+            
+            .notification {
+                max-width: calc(100vw - 40px);
+                right: 20px;
+                left: 20px;
+                font-size: 14px;
+            }
+        }
+        
+        /* Estilos para estados de carga */
+        .table-loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        /* Animación de pulso para indicar carga */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .loading-pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Mejoras visuales para empty states */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .empty-state p {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        /* Estilos para tipos de usuario */
+        .farmer-type {
+            background: #e8f5e8;
+            color: #000000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            border: 1px solid #28a745;
+        }
+        
+        .customer-type {
+            background: #e6f3ff;
+            color: #000000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            border: 1px solid #17a2b8;
+        }
+        
+        /* Asegurar que el texto en las celdas sea negro */
+        td .farmer-type,
+        td .customer-type {
+            color: #000000 !important;
+        }
+        
+        /* Estilo general para celdas de tabla */
+        tbody td {
+            color: #000000;
+        }
+        
+        /* Estilos para estados */
+        .status-active {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-inactive {
+            color: #dc3545;
+            font-weight: bold;
         }
     `;
     document.head.appendChild(style);
@@ -1281,7 +1990,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initDatabase();
 });
 
-// Inicializacion de respaldo
+// Inicialización de respaldo
 if (document.readyState === 'loading') {
     console.log('Esperando carga del DOM...');
 } else {
