@@ -1,28 +1,53 @@
-// js/farmer-product-integration.js - Complete product system for farmers with business name
+// js/farmer-product-integration.js - Complete product system for farmers with Firebase integration
 
 // ========================================
-// FARMER PRODUCT SYSTEM - COMPLETE INTEGRATION WITH BUSINESS NAME
+// FARMER PRODUCT SYSTEM - COMPLETE INTEGRATION WITH FIREBASE
 // ========================================
 
 window.FarmerProductSystem = {
     currentProducts: [],
     nextId: 2000, // IDs for farmers start at 2000
     previewImage: null,
+    firebaseReady: false,
     
-    init() {
-        console.log('🚀 Initializing Farmer Product System...');
+    async init() {
+        console.log('🚀 Initializing Farmer Product System with Firebase...');
+        
+        // Wait for Firebase to be ready
+        await this.waitForFirebase();
+        
         this.loadExistingProducts();
         this.bindFormEvents();
         this.bindImageUpload();
         this.createOfferCheckbox();
         this.renderProductsTable();
         
-        // NEW: Update existing products with business names
+        // Update existing products with business names
         setTimeout(() => {
             this.updateExistingProductsWithBusinessName();
         }, 1000);
         
-        console.log('✅ Farmer Product System ready!');
+        console.log('✅ Farmer Product System ready with Firebase!');
+    },
+    
+    async waitForFirebase() {
+        if (window.FirebaseManager && window.FirebaseManager.isConnected) {
+            this.firebaseReady = true;
+            return true;
+        }
+        
+        // Wait up to 5 seconds for Firebase
+        for (let i = 0; i < 50; i++) {
+            if (window.FirebaseManager && window.FirebaseManager.isConnected) {
+                this.firebaseReady = true;
+                console.log('✅ Firebase ready for Farmer Product System');
+                return true;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        console.warn('⚠️ Firebase not ready, using local storage fallback');
+        return false;
     },
     
     // ========================================
@@ -307,13 +332,13 @@ window.FarmerProductSystem = {
     },
     
     // ========================================
-    // FORM SUBMISSION
+    // FORM SUBMISSION WITH FIREBASE
     // ========================================
     
-    handleFormSubmit(e) {
+    async handleFormSubmit(e) {
         e.preventDefault();
         
-        console.log('📝 Processing form submission...');
+        console.log('🔍 Processing form submission...');
         
         const formData = this.collectFormData();
         if (!formData) return;
@@ -324,7 +349,7 @@ window.FarmerProductSystem = {
             return;
         }
         
-        const success = this.saveProduct(formData);
+        const success = await this.saveProduct(formData);
         if (success) {
             this.showNotification('Product saved successfully!', 'success');
             this.clearForm();
@@ -360,9 +385,8 @@ window.FarmerProductSystem = {
             isOffer: offerCheckbox?.checked || false,
             originalPrice: offerCheckbox?.checked ? parseFloat(originalPrice?.value) || null : null,
             type: (offerCheckbox?.checked) ? 'savings' : 'regular',
-            farmerId: currentFarmer?.id || 'unknown',
+            farmerId: currentFarmer?.id || currentFarmer?.email || 'unknown',
             farmerName: currentFarmer?.name || 'Unknown Farmer',
-            // CRITICAL UPDATE: Add business name
             businessName: currentFarmer?.businessName || 
                          currentFarmer?.business || 
                          (currentFarmer?.name ? `${currentFarmer.name}'s Farm` : null) || 
@@ -405,13 +429,12 @@ window.FarmerProductSystem = {
         return { isValid: true, message: 'Valid' };
     },
     
-    saveProduct(product) {
+    async saveProduct(product) {
         try {
             // Check if editing existing product
             if (this.editingProductId) {
                 const index = this.currentProducts.findIndex(p => p.id === this.editingProductId);
                 if (index > -1) {
-                    // Update existing product but keep original ID and creation date
                     product.id = this.editingProductId;
                     product.dateCreated = this.currentProducts[index].dateCreated;
                     this.currentProducts[index] = product;
@@ -422,12 +445,29 @@ window.FarmerProductSystem = {
                     console.log('✅ New product added successfully:', product);
                 }
             } else {
-                // Add new product
                 this.currentProducts.push(product);
                 console.log('✅ New product added successfully:', product);
             }
             
-            // CRITICAL: Update localStorage and trigger sync
+            // Save to Firebase first if available
+            if (this.firebaseReady && window.FarmerProductsFirebase) {
+                try {
+                    const farmerData = window.currentFarmer || JSON.parse(sessionStorage.getItem('agrotec_user') || '{}');
+                    const firebaseSuccess = await window.FarmerProductsFirebase.saveProduct(farmerData, product);
+                    
+                    if (firebaseSuccess) {
+                        console.log('✅ Product saved to Firebase');
+                        this.showNotification('Product saved to cloud storage ☁️', 'success');
+                    } else {
+                        console.warn('⚠️ Firebase save failed, using local storage');
+                    }
+                } catch (error) {
+                    console.error('❌ Firebase save error:', error);
+                    this.showNotification('Saved locally (cloud sync failed)', 'info');
+                }
+            }
+            
+            // Always save to localStorage as backup
             localStorage.setItem('farmer_products', JSON.stringify(this.currentProducts));
             
             // Force SharedCart to update immediately
@@ -489,7 +529,7 @@ window.FarmerProductSystem = {
     // BUSINESS NAME UPDATE FUNCTIONALITY
     // ========================================
     
-    updateExistingProductsWithBusinessName() {
+    async updateExistingProductsWithBusinessName() {
         try {
             const products = JSON.parse(localStorage.getItem('farmer_products') || '[]');
             let updated = false;
@@ -508,6 +548,21 @@ window.FarmerProductSystem = {
             if (updated) {
                 localStorage.setItem('farmer_products', JSON.stringify(products));
                 this.currentProducts = products;
+                
+                // Update in Firebase if available
+                if (this.firebaseReady && window.FarmerProductsFirebase) {
+                    const farmerData = window.currentFarmer || JSON.parse(sessionStorage.getItem('agrotec_user') || '{}');
+                    
+                    for (const product of products.filter(p => p.businessName)) {
+                        try {
+                            await window.FarmerProductsFirebase.updateProduct(product.id, {
+                                businessName: product.businessName
+                            });
+                        } catch (error) {
+                            console.error('Error updating product in Firebase:', error);
+                        }
+                    }
+                }
                 
                 // Force refresh of all systems
                 if (window.SharedCart) {
@@ -571,11 +626,35 @@ window.FarmerProductSystem = {
     },
     
     // ========================================
-    // PRODUCTS MANAGEMENT
+    // PRODUCTS MANAGEMENT WITH FIREBASE
     // ========================================
     
-    loadExistingProducts() {
+    async loadExistingProducts() {
         try {
+            // Try to load from Firebase first if available
+            if (this.firebaseReady && window.FarmerProductsFirebase) {
+                const farmerData = window.currentFarmer || JSON.parse(sessionStorage.getItem('agrotec_user') || '{}');
+                
+                if (farmerData.id || farmerData.email) {
+                    try {
+                        const firebaseProducts = await window.FarmerProductsFirebase.getFarmerProducts(
+                            farmerData.id || farmerData.email
+                        );
+                        
+                        if (firebaseProducts.length > 0) {
+                            this.currentProducts = firebaseProducts;
+                            // Update localStorage as backup
+                            localStorage.setItem('farmer_products', JSON.stringify(firebaseProducts));
+                            console.log(`📦 Loaded ${firebaseProducts.length} products from Firebase`);
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Error loading from Firebase, falling back to localStorage:', error);
+                    }
+                }
+            }
+            
+            // Fallback to localStorage
             const saved = localStorage.getItem('farmer_products');
             this.currentProducts = saved ? JSON.parse(saved) : [];
             
@@ -584,7 +663,7 @@ window.FarmerProductSystem = {
                 this.nextId = parseInt(savedId);
             }
             
-            console.log(`📦 Loaded ${this.currentProducts.length} existing products`);
+            console.log(`📦 Loaded ${this.currentProducts.length} products from localStorage`);
             
         } catch (error) {
             console.error('Error loading products:', error);
@@ -683,7 +762,7 @@ window.FarmerProductSystem = {
     },
     
     // ========================================
-    // PRODUCT ACTIONS
+    // PRODUCT ACTIONS WITH FIREBASE
     // ========================================
     
     editProduct(productId) {
@@ -726,20 +805,32 @@ window.FarmerProductSystem = {
         }, 100);
     },
     
-    toggleProductStatus(productId) {
+    async toggleProductStatus(productId) {
         const product = this.currentProducts.find(p => p.id === productId);
         if (!product) return;
         
         product.status = product.status === 'active' ? 'inactive' : 'active';
         
-        this.saveProducts();
+        // Update in Firebase if available
+        if (this.firebaseReady && window.FarmerProductsFirebase) {
+            try {
+                await window.FarmerProductsFirebase.updateProduct(productId, {
+                    status: product.status
+                });
+                console.log('✅ Product status updated in Firebase');
+            } catch (error) {
+                console.error('Error updating status in Firebase:', error);
+            }
+        }
+        
+        await this.saveProducts();
         this.renderProductsTable();
         
         const statusText = product.status === 'active' ? 'activated' : 'deactivated';
         this.showNotification(`Product ${statusText}`, 'success');
     },
     
-    deleteProduct(productId) {
+    async deleteProduct(productId) {
         const product = this.currentProducts.find(p => p.id === productId);
         if (!product) return;
         
@@ -747,18 +838,44 @@ window.FarmerProductSystem = {
         
         this.currentProducts = this.currentProducts.filter(p => p.id !== productId);
         
+        // Remove from Firebase if available
+        if (this.firebaseReady && window.FarmerProductsFirebase) {
+            try {
+                await window.FarmerProductsFirebase.deleteProduct(productId);
+                console.log('✅ Product deleted from Firebase');
+            } catch (error) {
+                console.error('Error deleting from Firebase:', error);
+            }
+        }
+        
         // Remove from SharedCart if exists
         if (window.SharedCart && window.SharedCart.allProducts[productId]) {
             delete window.SharedCart.allProducts[productId];
         }
         
-        this.saveProducts();
+        await this.saveProducts();
         this.renderProductsTable();
         this.showNotification(`Product "${product.title}" deleted`, 'info');
     },
     
-    saveProducts() {
+    async saveProducts() {
         try {
+            // Save each product to Firebase if available
+            if (this.firebaseReady && window.FarmerProductsFirebase) {
+                const farmerData = window.currentFarmer || JSON.parse(sessionStorage.getItem('agrotec_user') || '{}');
+                
+                if (farmerData.id || farmerData.email) {
+                    for (const product of this.currentProducts) {
+                        try {
+                            await window.FarmerProductsFirebase.saveProduct(farmerData, product);
+                        } catch (error) {
+                            console.error('Error saving product to Firebase:', error);
+                        }
+                    }
+                }
+            }
+            
+            // Always save to localStorage as backup
             localStorage.setItem('farmer_products', JSON.stringify(this.currentProducts));
             
             // Force SharedCart sync
@@ -873,6 +990,7 @@ window.FarmerProductSystem = {
         console.log('Current Products:', this.currentProducts);
         console.log('Next ID:', this.nextId);
         console.log('Preview Image:', this.previewImage ? 'Set' : 'None');
+        console.log('Firebase Ready:', this.firebaseReady);
         console.log('SharedCart Integration:', !!window.SharedCart);
         console.log('Current Farmer:', currentFarmer);
         
@@ -895,6 +1013,7 @@ window.FarmerProductSystem = {
             withBusinessName: withBusinessName,
             nextId: this.nextId,
             hasPreviewImage: !!this.previewImage,
+            firebaseReady: this.firebaseReady,
             sharedCartIntegration: !!window.SharedCart,
             currentFarmer: currentFarmer ? {
                 name: currentFarmer.name,
@@ -905,10 +1024,10 @@ window.FarmerProductSystem = {
 };
 
 // ========================================
-// GLOBAL UTILITY FUNCTION FOR IMMEDIATE UPDATE
+// GLOBAL UTILITY FUNCTION FOR IMMEDIATE UPDATE WITH FIREBASE
 // ========================================
 
-window.updateAllProductsWithBusinessName = function() {
+window.updateAllProductsWithBusinessName = async function() {
     const userSession = sessionStorage.getItem('agrotec_user');
     if (!userSession) {
         console.error('No user session found');
@@ -933,6 +1052,21 @@ window.updateAllProductsWithBusinessName = function() {
         
         if (updated > 0) {
             localStorage.setItem('farmer_products', JSON.stringify(products));
+            
+            // Update in Firebase if available
+            if (window.FarmerProductSystem && window.FarmerProductSystem.firebaseReady && window.FarmerProductsFirebase) {
+                for (const product of products.filter(p => p.businessName)) {
+                    try {
+                        await window.FarmerProductsFirebase.updateProduct(product.id, {
+                            businessName: product.businessName
+                        });
+                    } catch (error) {
+                        console.error('Error updating product in Firebase:', error);
+                    }
+                }
+                console.log('✅ Products updated in Firebase');
+            }
+            
             console.log(`✅ Updated ${updated} products with business names`);
             
             // Update current system
@@ -949,7 +1083,7 @@ window.updateAllProductsWithBusinessName = function() {
                 window.ProductsManager.refreshProducts();
             }
             
-            alert(`Successfully updated ${updated} products with business names!\n\nBusiness Name: "${products[0]?.businessName}"`);
+            alert(`Successfully updated ${updated} products with business names!\n\nBusiness Name: "${products[0]?.businessName}"\n\n${window.FarmerProductSystem && window.FarmerProductSystem.firebaseReady ? 'Synced to cloud storage ☁️' : 'Saved locally 💾'}`);
         } else {
             console.log('All products already have business names');
             alert('All products already have business names');
@@ -998,7 +1132,7 @@ window.showForm = function() {
 // Export for debugging
 window.FarmerProductSystem = FarmerProductSystem;
 
-console.log('🚀 Farmer Product Integration System loaded with Business Name support!');
+console.log('🚀 Farmer Product Integration System loaded with Firebase support!');
 console.log('Commands: FarmerProductSystem.debug(), exportCSV(), updateAllProductsWithBusinessName()');
 
 // ========================================
@@ -1185,6 +1319,36 @@ productStyles.textContent = `
         transform: scale(1.1);
     }
     
+    /* Firebase status indicator */
+    .firebase-status {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        z-index: 1000;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+    
+    .firebase-status.connected {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .firebase-status.disconnected {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .firebase-status:hover {
+        opacity: 1;
+    }
+    
     /* Animation for form submission */
     .form-submitting {
         opacity: 0.7;
@@ -1291,3 +1455,29 @@ productStyles.textContent = `
 `;
 
 document.head.appendChild(productStyles);
+
+// ========================================
+// FIREBASE STATUS INDICATOR
+// ========================================
+
+function createFirebaseStatusIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'firebase-status';
+    indicator.id = 'firebaseStatusIndicator';
+    document.body.appendChild(indicator);
+    
+    function updateStatus() {
+        const isConnected = window.FirebaseManager && window.FirebaseManager.isConnected;
+        indicator.className = `firebase-status ${isConnected ? 'connected' : 'disconnected'}`;
+        indicator.textContent = isConnected ? '☁️ Cloud Connected' : '💾 Local Storage';
+        indicator.title = isConnected ? 'Connected to Firebase' : 'Using local storage only';
+    }
+    
+    updateStatus();
+    setInterval(updateStatus, 5000);
+}
+
+// Create status indicator when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(createFirebaseStatusIndicator, 2000);
+});
