@@ -183,7 +183,7 @@ function showUserProfileWithPhoto(user) {
     modal.innerHTML = `
         <div onclick="closeProfileModal()" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9998;"></div>
         <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:15px;max-width:500px;width:90%;z-index:9999;box-shadow:0 15px 40px rgba(0,0,0,0.3);">
-            <div style="background:linear-gradient(135deg,#28a745,#20c997);color:white;padding:25px;text-align:center;border-radius:15px 15px 0 0;position:relative;">
+            <div style="background:linear-gradient(135deg,#174a23,#174a23);color:white;padding:25px;text-align:center;border-radius:15px 15px 0 0;position:relative;">
                 <button onclick="closeProfileModal()" style="position:absolute;top:15px;right:20px;background:none;border:none;color:white;font-size:24px;cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;">&times;</button>
                 
                 <div style="margin-bottom: 15px;">
@@ -271,4 +271,5 @@ window.removeProfilePhoto = removeProfilePhoto;
 window.editUserProfile = editUserProfile;
 
 // Override the original show profile function
+
 window.showUserProfile = showUserProfileWithPhoto;
