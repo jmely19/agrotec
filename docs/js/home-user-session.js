@@ -113,7 +113,7 @@ function addSessionIndicator(user) {
                 top: 10px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: linear-gradient(135deg, #28a745, #20c997);
+                background: linear-gradient(135deg, #055c1aff, #055c1aff);
                 color: white;
                 padding: 8px 16px;
                 border-radius: 20px;
@@ -631,4 +631,5 @@ if (document.readyState === 'loading') {
 } else if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
     console.log('DOM already loaded, starting session immediately...');
     initUserSession();
+
 }
