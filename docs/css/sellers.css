@@ -530,7 +530,7 @@ body {
 /* Hero Section */
 .hero {
     background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
-                url("../img/sellers/portada.jpeg");
+                url("../img/sellers/portada.jpg");
     height: 50vh;
     display: flex;
     align-items: center;
@@ -1087,3 +1087,4 @@ a.seller-card {
   color: inherit;
   text-decoration: none;
 }
+
