@@ -219,7 +219,7 @@ function showSuccessRedirect(message, email) {
     }
 }
 
-// =================== FORM HANDLING ===================
+// =================== FORM HANDLING (ACTUALIZADO PARA FIREBASE) ===================
 async function handleRegistration(event) {
     event.preventDefault();
     clearMessages();
@@ -283,7 +283,7 @@ async function handleRegistration(event) {
         const farmerPhone = document.getElementById('farmerPhone').value.trim();
         const businessName = document.getElementById('businessName').value.trim();
 
-        // CORRECTION: Save farmer's phone with correct name
+        // Save farmer's phone with correct name
         userData.location = location;
         userData.phone = farmerPhone; // Change from farmerPhone to phone to match DB
         userData.businessName = businessName;
@@ -300,8 +300,8 @@ async function handleRegistration(event) {
     showMessage('Creating account...');
 
     try {
-        // Call database-simulator.js function directly
-        const result = window.registerUser(userData);
+        // CAMBIO PRINCIPAL: Usar await para esperar la función async
+        const result = await window.registerUser(userData);
         
         console.log('Registration result:', result);
 
@@ -324,7 +324,7 @@ async function handleRegistration(event) {
         
     } catch (error) {
         console.error('Registration error:', error);
-        showMessage('Internal error. Please try again.', true);
+        showMessage('Internal error. Please try again: ' + error.message, true);
     }
 }
 
@@ -340,18 +340,38 @@ function validatePhone(phone) {
 }
 
 // =================== INITIALIZATION ===================
-function initializeRegistration() {
+async function initializeRegistration() {
     console.log('Initializing registration page...');
     
-    // Check connection with database-simulator.js
-    setTimeout(() => {
-        if (typeof window.registerUser === 'function') {
-            console.log('✅ Database connection established');
-        } else {
-            console.error('❌ Error: database-simulator.js not loaded');
-            showMessage('System error. Please reload the page.', true);
-        }
-    }, 500);
+    // Check connection with database-simulator.js with retry
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const checkDatabaseConnection = () => {
+        return new Promise((resolve, reject) => {
+            const check = () => {
+                if (typeof window.registerUser === 'function') {
+                    console.log('✅ Database connection established');
+                    resolve(true);
+                } else if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(`Checking database connection... attempt ${retryCount}/${maxRetries}`);
+                    setTimeout(check, 500);
+                } else {
+                    console.error('❌ Error: database-simulator.js not loaded after retries');
+                    reject(new Error('Database system not available'));
+                }
+            };
+            check();
+        });
+    };
+    
+    try {
+        await checkDatabaseConnection();
+    } catch (error) {
+        showMessage('System error. Please reload the page.', true);
+        return;
+    }
     
     // Configure form
     const registerForm = document.getElementById('registerFormData');
@@ -376,9 +396,9 @@ function initializeRegistration() {
     console.log('✅ Registration page initialized');
 }
 
-// =================== DEBUG FUNCTIONS ===================
+// =================== DEBUG FUNCTIONS (ACTUALIZADAS) ===================
 window.registerDebug = {
-    testRegistration: () => {
+    testRegistration: async () => {
         const testData = {
             name: 'Test',
             lastName: 'User',
@@ -391,7 +411,14 @@ window.registerDebug = {
         };
         
         console.log('Testing registration with:', testData);
-        return window.registerUser(testData);
+        try {
+            const result = await window.registerUser(testData);
+            console.log('Test registration result:', result);
+            return result;
+        } catch (error) {
+            console.error('Test registration error:', error);
+            return { success: false, error: error.message };
+        }
     },
     
     checkConnection: () => {
@@ -409,6 +436,13 @@ window.registerDebug = {
         
         if (typeof window.databaseDebug === 'object') {
             console.log('- Current data:', window.databaseDebug.showData());
+        }
+        
+        // Check Firebase status
+        if (typeof firebase !== 'undefined') {
+            console.log('- Firebase loaded:', true);
+        } else {
+            console.log('- Firebase loaded:', false, '(using localStorage fallback)');
         }
     },
     
