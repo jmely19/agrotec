@@ -207,6 +207,23 @@ p {
     box-shadow: var(--shadow-lg);
 }
 
+/* Botón secundario */
+.btn-secondary {
+  display: inline-block;
+  padding: 12px 25px;
+  background: #2b632b;
+  color: #ffffff;
+  border-radius: 30px;
+  font-weight: bold;
+  text-decoration: none;
+  text-align: center;
+  transition: 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #2b632b;
+}
+
 /* ========================================
    Header/Navigation Styles
 ======================================== */
